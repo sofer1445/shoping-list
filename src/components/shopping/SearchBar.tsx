@@ -20,13 +20,13 @@ interface SearchBarProps {
 
 export const SearchBar = ({
   searchQuery,
-  items = [], // Provide default empty array
+  items = [], // Default to empty array if items is undefined
   onSearch,
   onSelectSuggestion,
 }: SearchBarProps) => {
-  // Ensure items is always an array before filtering
-  const suggestions = Array.isArray(items) 
-    ? items.filter((item) =>
+  // Ensure items is always an array and filter only if searchQuery exists
+  const suggestions = searchQuery
+    ? (Array.isArray(items) ? items : []).filter((item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : [];
