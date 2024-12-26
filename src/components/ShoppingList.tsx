@@ -1,6 +1,23 @@
-import React, { useState } from "react";
-import { Plus, Trash2, Edit, Check } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, Trash2, Edit, Check, Search, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Input } from "./ui/input";
 
 interface ShoppingItem {
   id: string;
@@ -8,9 +25,77 @@ interface ShoppingItem {
   quantity: number;
   category: string;
   completed: boolean;
+  isNew?: boolean;
+  justCompleted?: boolean;
 }
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
+
+const SortableItem = ({ item }: { item: ShoppingItem }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className={cn(
+        "flex items-center justify-between p-3 rounded-lg border animate-fadeIn transition-colors",
+        item.completed ? "bg-secondary" : "bg-white",
+        item.isNew && "bg-green-100",
+        item.justCompleted && "bg-red-100"
+      )}
+    >
+      <div className="flex gap-2">
+        <button
+          className="text-destructive hover:text-destructive/80 transition-colors"
+          onClick={() => {/* keep existing delete functionality */}}
+        >
+          <Trash2 size={20} />
+        </button>
+        <button className="text-primary hover:text-primary/80 transition-colors">
+          <Edit size={20} />
+        </button>
+        <div {...listeners} className="cursor-grab active:cursor-grabbing">
+          <GripVertical size={20} />
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-4 text-right">
+        <button
+          onClick={() => {/* keep existing toggle functionality */}}
+          className={cn(
+            "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
+            item.completed
+              ? "border-primary bg-primary text-white"
+              : "border-gray-300"
+          )}
+        >
+          {item.completed && <Check size={16} />}
+        </button>
+        <div>
+          <div className={cn(item.completed && "line-through")}>
+            {item.name}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {item.category} • {item.quantity}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const ShoppingList = () => {
   const [items, setItems] = useState<ShoppingItem[]>([]);
@@ -18,6 +103,25 @@ export const ShoppingList = () => {
   const [newItemQuantity, setNewItemQuantity] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState(categories[0]);
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  useEffect(() => {
+    const savedItems = localStorage.getItem("shoppingItems");
+    if (savedItems) {
+      setItems(JSON.parse(savedItems));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("shoppingItems", JSON.stringify(items));
+  }, [items]);
 
   const addItem = () => {
     if (!newItemName.trim()) return;
@@ -28,29 +132,70 @@ export const ShoppingList = () => {
       quantity: newItemQuantity,
       category: selectedCategory,
       completed: false,
+      isNew: true,
     };
     
     setItems([...items, newItem]);
     setNewItemName("");
     setNewItemQuantity(1);
+
+    // Remove the green highlight after 3 seconds
+    setTimeout(() => {
+      setItems(prevItems =>
+        prevItems.map(item =>
+          item.id === newItem.id ? { ...item, isNew: false } : item
+        )
+      );
+    }, 3000);
   };
 
   const toggleItem = (id: string) => {
     setItems(
       items.map((item) =>
-        item.id === id ? { ...item, completed: !item.completed } : item
+        item.id === id
+          ? { ...item, completed: !item.completed, justCompleted: !item.completed }
+          : item
       )
     );
+
+    // Remove the red highlight after 3 seconds
+    setTimeout(() => {
+      setItems(prevItems =>
+        prevItems.map(item =>
+          item.id === id ? { ...item, justCompleted: false } : item
+        )
+      );
+    }, 3000);
   };
 
   const deleteItem = (id: string) => {
     setItems(items.filter((item) => item.id !== id));
   };
 
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      setItems((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   const filteredItems = items.filter((item) => {
-    if (filter === "active") return !item.completed;
-    if (filter === "completed") return item.completed;
-    return true;
+    const matchesFilter =
+      filter === "all" ||
+      (filter === "active" && !item.completed) ||
+      (filter === "completed" && item.completed);
+
+    const matchesSearch = item.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+    return matchesFilter && matchesSearch;
   });
 
   return (
@@ -58,6 +203,14 @@ export const ShoppingList = () => {
       <h1 className="text-2xl font-bold text-right mb-6">רשימת קניות</h1>
       
       <div className="flex flex-col gap-4 mb-6">
+        <Input
+          type="search"
+          placeholder="חיפוש מוצרים..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="text-right"
+        />
+
         <div className="flex gap-2">
           <input
             type="text"
@@ -132,51 +285,22 @@ export const ShoppingList = () => {
         </button>
       </div>
 
-      <div className="space-y-2">
-        {filteredItems.map((item) => (
-          <div
-            key={item.id}
-            className={cn(
-              "flex items-center justify-between p-3 rounded-lg border animate-fadeIn",
-              item.completed ? "bg-secondary" : "bg-white"
-            )}
-          >
-            <div className="flex gap-2">
-              <button
-                onClick={() => deleteItem(item.id)}
-                className="text-destructive hover:text-destructive/80 transition-colors"
-              >
-                <Trash2 size={20} />
-              </button>
-              <button className="text-primary hover:text-primary/80 transition-colors">
-                <Edit size={20} />
-              </button>
-            </div>
-            
-            <div className="flex items-center gap-4 text-right">
-              <button
-                onClick={() => toggleItem(item.id)}
-                className={cn(
-                  "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
-                  item.completed
-                    ? "border-primary bg-primary text-white"
-                    : "border-gray-300"
-                )}
-              >
-                {item.completed && <Check size={16} />}
-              </button>
-              <div>
-                <div className={cn(item.completed && "line-through")}>
-                  {item.name}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {item.category} • {item.quantity}
-                </div>
-              </div>
-            </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={filteredItems}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-2">
+            {filteredItems.map((item) => (
+              <SortableItem key={item.id} item={item} />
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 };
