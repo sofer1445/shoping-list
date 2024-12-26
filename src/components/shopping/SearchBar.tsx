@@ -25,8 +25,8 @@ export const SearchBar = ({
   onSelectSuggestion,
 }: SearchBarProps) => {
   // Ensure items is always an array and filter only if searchQuery exists
-  const suggestions = searchQuery
-    ? (Array.isArray(items) ? items : []).filter((item) =>
+  const suggestions = searchQuery && Array.isArray(items)
+    ? items.filter((item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : [];
@@ -39,23 +39,24 @@ export const SearchBar = ({
         onValueChange={onSearch}
         className="text-right"
       />
-      {searchQuery && (
+      {searchQuery && suggestions.length > 0 && (
         <CommandList>
-          {suggestions.length === 0 ? (
-            <CommandEmpty>לא נמצאו תוצאות</CommandEmpty>
-          ) : (
-            <CommandGroup>
-              {suggestions.map((item) => (
-                <CommandItem
-                  key={item.id}
-                  onSelect={() => onSelectSuggestion(item.name)}
-                  className="text-right"
-                >
-                  {item.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
+          <CommandGroup>
+            {suggestions.map((item) => (
+              <CommandItem
+                key={item.id}
+                onSelect={() => onSelectSuggestion(item.name)}
+                className="text-right"
+              >
+                {item.name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      )}
+      {searchQuery && suggestions.length === 0 && (
+        <CommandList>
+          <CommandEmpty>לא נמצאו תוצאות</CommandEmpty>
         </CommandList>
       )}
     </Command>
