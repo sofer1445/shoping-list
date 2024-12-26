@@ -41,8 +41,9 @@ export const SearchBar = ({
       />
       {searchQuery && (
         <CommandList>
-          <CommandEmpty>לא נמצאו תוצאות</CommandEmpty>
-          {suggestions.length > 0 && (
+          {suggestions.length === 0 ? (
+            <CommandEmpty>לא נמצאו תוצאות</CommandEmpty>
+          ) : (
             <CommandGroup>
               {suggestions.map((item) => (
                 <CommandItem
