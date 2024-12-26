@@ -20,13 +20,16 @@ interface SearchBarProps {
 
 export const SearchBar = ({
   searchQuery,
-  items,
+  items = [], // Provide default empty array
   onSearch,
   onSelectSuggestion,
 }: SearchBarProps) => {
-  const suggestions = items.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Ensure items is always an array before filtering
+  const suggestions = Array.isArray(items) 
+    ? items.filter((item) =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   return (
     <Command className="rounded-lg border shadow-md">
@@ -39,17 +42,19 @@ export const SearchBar = ({
       {searchQuery && (
         <CommandList>
           <CommandEmpty>לא נמצאו תוצאות</CommandEmpty>
-          <CommandGroup>
-            {suggestions.map((item) => (
-              <CommandItem
-                key={item.id}
-                onSelect={() => onSelectSuggestion(item.name)}
-                className="text-right"
-              >
-                {item.name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          {suggestions.length > 0 && (
+            <CommandGroup>
+              {suggestions.map((item) => (
+                <CommandItem
+                  key={item.id}
+                  onSelect={() => onSelectSuggestion(item.name)}
+                  className="text-right"
+                >
+                  {item.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
         </CommandList>
       )}
     </Command>
