@@ -22,6 +22,7 @@ import { AddItemForm } from "./shopping/AddItemForm";
 import { FilterButtons } from "./shopping/FilterButtons";
 import { ShoppingItem } from "./shopping/types";
 import { useToast } from "./ui/use-toast";
+import { EditItemDialog } from "./shopping/EditItemDialog";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
@@ -108,6 +109,7 @@ export const ShoppingList = () => {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -183,12 +185,20 @@ export const ShoppingList = () => {
   const editItem = (id: string) => {
     const item = items.find((i) => i.id === id);
     if (item) {
-      // For now, we'll just show a toast. In a future update, we can add an edit modal
-      toast({
-        title: "עריכת פריט",
-        description: "פונקציונליות העריכה תתווסף בקרוב",
-      });
+      setEditingItem(item);
     }
+  };
+
+  const handleSaveEdit = (updatedItem: ShoppingItem) => {
+    setItems(
+      items.map((item) =>
+        item.id === updatedItem.id ? updatedItem : item
+      )
+    );
+    toast({
+      title: "פריט עודכן",
+      description: `${updatedItem.name} עודכן בהצלחה`,
+    });
   };
 
   const handleDragEnd = (event: any) => {
@@ -202,10 +212,6 @@ export const ShoppingList = () => {
         return arrayMove(items, oldIndex, newIndex);
       });
     }
-  };
-
-  const handleSearchSelect = (itemName: string) => {
-    setSearchQuery(itemName);
   };
 
   const filteredItems = items.filter((item) => {
@@ -230,7 +236,12 @@ export const ShoppingList = () => {
           searchQuery={searchQuery}
           items={items}
           onSearch={setSearchQuery}
-          onSelectSuggestion={handleSearchSelect}
+          onSelectSuggestion={(itemName) => {
+            const item = items.find(i => i.name === itemName);
+            if (item) {
+              editItem(item.id);
+            }
+          }}
         />
 
         <AddItemForm onAdd={addItem} categories={categories} />
@@ -260,6 +271,14 @@ export const ShoppingList = () => {
           </div>
         </SortableContext>
       </DndContext>
+
+      <EditItemDialog
+        item={editingItem}
+        isOpen={!!editingItem}
+        onClose={() => setEditingItem(null)}
+        onSave={handleSaveEdit}
+        categories={categories}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "../ui/input";
 import {
@@ -20,11 +20,12 @@ interface SearchBarProps {
 
 export const SearchBar = ({
   searchQuery,
-  items = [], // Default to empty array if items is undefined
+  items = [], 
   onSearch,
   onSelectSuggestion,
 }: SearchBarProps) => {
-  // Always ensure items is an array before filtering
+  const [isFocused, setIsFocused] = useState(false);
+  
   const suggestions = Array.isArray(items) 
     ? items.filter((item) =>
         item.name.toLowerCase().includes((searchQuery || '').toLowerCase())
@@ -37,25 +38,32 @@ export const SearchBar = ({
         placeholder="חיפוש מוצרים..."
         value={searchQuery}
         onValueChange={onSearch}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setTimeout(() => setIsFocused(false), 200)}
         className="text-right"
       />
-      <CommandList>
-        {suggestions.length > 0 ? (
-          <CommandGroup>
-            {suggestions.map((item) => (
-              <CommandItem
-                key={item.id}
-                onSelect={() => onSelectSuggestion(item.name)}
-                className="text-right"
-              >
-                {item.name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        ) : (
-          searchQuery && <CommandEmpty>לא נמצאו תוצאות</CommandEmpty>
-        )}
-      </CommandList>
+      {isFocused && (
+        <CommandList>
+          {suggestions.length > 0 ? (
+            <CommandGroup>
+              {suggestions.map((item) => (
+                <CommandItem
+                  key={item.id}
+                  onSelect={() => {
+                    onSelectSuggestion(item.name);
+                    setIsFocused(false);
+                  }}
+                  className="text-right"
+                >
+                  {item.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : (
+            searchQuery && <CommandEmpty>לא נמצאו תוצאות</CommandEmpty>
+          )}
+        </CommandList>
+      )}
     </Command>
   );
 };
