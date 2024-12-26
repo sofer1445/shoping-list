@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Edit, Check, Search, GripVertical } from "lucide-react";
+import { Trash2, Edit, Check, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -17,21 +17,25 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Input } from "./ui/input";
-
-interface ShoppingItem {
-  id: string;
-  name: string;
-  quantity: number;
-  category: string;
-  completed: boolean;
-  isNew?: boolean;
-  justCompleted?: boolean;
-}
+import { SearchBar } from "./shopping/SearchBar";
+import { AddItemForm } from "./shopping/AddItemForm";
+import { FilterButtons } from "./shopping/FilterButtons";
+import { ShoppingItem } from "./shopping/types";
+import { useToast } from "./ui/use-toast";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
-const SortableItem = ({ item }: { item: ShoppingItem }) => {
+const SortableItem = ({
+  item,
+  onDelete,
+  onToggle,
+  onEdit,
+}: {
+  item: ShoppingItem;
+  onDelete: (id: string) => void;
+  onToggle: (id: string) => void;
+  onEdit: (id: string) => void;
+}) => {
   const {
     attributes,
     listeners,
@@ -60,21 +64,24 @@ const SortableItem = ({ item }: { item: ShoppingItem }) => {
       <div className="flex gap-2">
         <button
           className="text-destructive hover:text-destructive/80 transition-colors"
-          onClick={() => {/* keep existing delete functionality */}}
+          onClick={() => onDelete(item.id)}
         >
           <Trash2 size={20} />
         </button>
-        <button className="text-primary hover:text-primary/80 transition-colors">
+        <button
+          className="text-primary hover:text-primary/80 transition-colors"
+          onClick={() => onEdit(item.id)}
+        >
           <Edit size={20} />
         </button>
         <div {...listeners} className="cursor-grab active:cursor-grabbing">
           <GripVertical size={20} />
         </div>
       </div>
-      
+
       <div className="flex items-center gap-4 text-right">
         <button
-          onClick={() => {/* keep existing toggle functionality */}}
+          onClick={() => onToggle(item.id)}
           className={cn(
             "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
             item.completed
@@ -99,11 +106,9 @@ const SortableItem = ({ item }: { item: ShoppingItem }) => {
 
 export const ShoppingList = () => {
   const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [newItemName, setNewItemName] = useState("");
-  const [newItemQuantity, setNewItemQuantity] = useState(1);
-  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -123,27 +128,24 @@ export const ShoppingList = () => {
     localStorage.setItem("shoppingItems", JSON.stringify(items));
   }, [items]);
 
-  const addItem = () => {
-    if (!newItemName.trim()) return;
-    
-    const newItem: ShoppingItem = {
+  const addItem = (newItem: Omit<ShoppingItem, "id" | "completed" | "isNew">) => {
+    const item: ShoppingItem = {
+      ...newItem,
       id: Date.now().toString(),
-      name: newItemName,
-      quantity: newItemQuantity,
-      category: selectedCategory,
       completed: false,
       isNew: true,
     };
-    
-    setItems([...items, newItem]);
-    setNewItemName("");
-    setNewItemQuantity(1);
 
-    // Remove the green highlight after 3 seconds
+    setItems([...items, item]);
+    toast({
+      title: "פריט נוסף",
+      description: `${item.name} נוסף לרשימה`,
+    });
+
     setTimeout(() => {
-      setItems(prevItems =>
-        prevItems.map(item =>
-          item.id === newItem.id ? { ...item, isNew: false } : item
+      setItems((prevItems) =>
+        prevItems.map((i) =>
+          i.id === item.id ? { ...i, isNew: false } : i
         )
       );
     }, 3000);
@@ -158,10 +160,9 @@ export const ShoppingList = () => {
       )
     );
 
-    // Remove the red highlight after 3 seconds
     setTimeout(() => {
-      setItems(prevItems =>
-        prevItems.map(item =>
+      setItems((prevItems) =>
+        prevItems.map((item) =>
           item.id === id ? { ...item, justCompleted: false } : item
         )
       );
@@ -169,7 +170,25 @@ export const ShoppingList = () => {
   };
 
   const deleteItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
+    const item = items.find((i) => i.id === id);
+    if (item) {
+      setItems(items.filter((i) => i.id !== id));
+      toast({
+        title: "פריט נמחק",
+        description: `${item.name} הוסר מהרשימה`,
+      });
+    }
+  };
+
+  const editItem = (id: string) => {
+    const item = items.find((i) => i.id === id);
+    if (item) {
+      // For now, we'll just show a toast. In a future update, we can add an edit modal
+      toast({
+        title: "עריכת פריט",
+        description: "פונקציונליות העריכה תתווסף בקרוב",
+      });
+    }
   };
 
   const handleDragEnd = (event: any) => {
@@ -183,6 +202,10 @@ export const ShoppingList = () => {
         return arrayMove(items, oldIndex, newIndex);
       });
     }
+  };
+
+  const handleSearchSelect = (itemName: string) => {
+    setSearchQuery(itemName);
   };
 
   const filteredItems = items.filter((item) => {
@@ -201,89 +224,19 @@ export const ShoppingList = () => {
   return (
     <div className="max-w-md mx-auto p-4 min-h-screen bg-white">
       <h1 className="text-2xl font-bold text-right mb-6">רשימת קניות</h1>
-      
+
       <div className="flex flex-col gap-4 mb-6">
-        <Input
-          type="search"
-          placeholder="חיפוש מוצרים..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="text-right"
+        <SearchBar
+          searchQuery={searchQuery}
+          items={items}
+          onSearch={setSearchQuery}
+          onSelectSuggestion={handleSearchSelect}
         />
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            placeholder="שם המוצר"
-            className="flex-1 p-2 border rounded-lg text-right"
-          />
-          <input
-            type="number"
-            value={newItemQuantity}
-            onChange={(e) => setNewItemQuantity(Number(e.target.value))}
-            min="1"
-            className="w-20 p-2 border rounded-lg text-right"
-          />
-        </div>
-        
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="p-2 border rounded-lg text-right"
-        >
-          {categories.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-        
-        <button
-          onClick={addItem}
-          className="flex items-center justify-center gap-2 bg-primary text-white p-2 rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          <Plus size={20} />
-          הוסף פריט
-        </button>
+        <AddItemForm onAdd={addItem} categories={categories} />
       </div>
 
-      <div className="flex gap-2 mb-4 justify-end">
-        <button
-          onClick={() => setFilter("all")}
-          className={cn(
-            "px-4 py-2 rounded-lg",
-            filter === "all"
-              ? "bg-primary text-white"
-              : "bg-secondary text-foreground"
-          )}
-        >
-          הכל
-        </button>
-        <button
-          onClick={() => setFilter("active")}
-          className={cn(
-            "px-4 py-2 rounded-lg",
-            filter === "active"
-              ? "bg-primary text-white"
-              : "bg-secondary text-foreground"
-          )}
-        >
-          פעיל
-        </button>
-        <button
-          onClick={() => setFilter("completed")}
-          className={cn(
-            "px-4 py-2 rounded-lg",
-            filter === "completed"
-              ? "bg-primary text-white"
-              : "bg-secondary text-foreground"
-          )}
-        >
-          הושלם
-        </button>
-      </div>
+      <FilterButtons filter={filter} onFilterChange={setFilter} />
 
       <DndContext
         sensors={sensors}
@@ -296,7 +249,13 @@ export const ShoppingList = () => {
         >
           <div className="space-y-2">
             {filteredItems.map((item) => (
-              <SortableItem key={item.id} item={item} />
+              <SortableItem
+                key={item.id}
+                item={item}
+                onDelete={deleteItem}
+                onToggle={toggleItem}
+                onEdit={editItem}
+              />
             ))}
           </div>
         </SortableContext>
