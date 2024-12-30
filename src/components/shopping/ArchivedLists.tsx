@@ -51,7 +51,6 @@ export const ArchivedLists = () => {
     } catch (error) {
       console.error("Error fetching archived lists:", error);
       
-      // Retry up to 3 times with exponential backoff
       if (retryCount < 3) {
         const delay = Math.pow(2, retryCount) * 1000;
         setTimeout(() => fetchArchivedLists(retryCount + 1), delay);
