@@ -16,6 +16,7 @@ interface ArchivedList {
 export const ArchivedLists = () => {
   const [archivedLists, setArchivedLists] = useState<ArchivedList[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -29,22 +30,33 @@ export const ArchivedLists = () => {
   const fetchArchivedLists = async (retryCount = 0) => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      setError(null);
+
+      if (!user) {
+        throw new Error("No authenticated user found");
+      }
+
+      const { data, error: supabaseError } = await supabase
         .from("shopping_lists")
         .select("id, name, archived_at")
         .eq("archived", true)
-        .eq("created_by", user?.id)
+        .eq("created_by", user.id)
         .order("archived_at", { ascending: false });
 
-      if (error) throw error;
+      if (supabaseError) {
+        throw supabaseError;
+      }
+
       setArchivedLists(data || []);
     } catch (error) {
       console.error("Error fetching archived lists:", error);
+      
       // Retry up to 3 times with exponential backoff
       if (retryCount < 3) {
         const delay = Math.pow(2, retryCount) * 1000;
         setTimeout(() => fetchArchivedLists(retryCount + 1), delay);
       } else {
+        setError("לא ניתן היה לטעון את הרשימות המאורכבות. אנא נסה שוב מאוחר יותר.");
         toast({
           title: "שגיאה",
           description: "לא ניתן היה לטעון את הרשימות המאורכבות",
@@ -58,6 +70,10 @@ export const ArchivedLists = () => {
 
   const handleRestore = async (listId: string) => {
     try {
+      if (!user) {
+        throw new Error("No authenticated user found");
+      }
+
       const { error } = await supabase
         .from("shopping_lists")
         .update({
@@ -65,7 +81,7 @@ export const ArchivedLists = () => {
           archived_at: null,
         })
         .eq("id", listId)
-        .eq("created_by", user?.id);
+        .eq("created_by", user.id);
 
       if (error) throw error;
 
@@ -95,6 +111,21 @@ export const ArchivedLists = () => {
     return (
       <div className="text-center text-muted-foreground p-4">
         טוען רשימות...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-4">
+        <p className="text-red-500 mb-4">{error}</p>
+        <Button 
+          variant="outline" 
+          onClick={() => fetchArchivedLists()}
+          className="mx-auto"
+        >
+          נסה שוב
+        </Button>
       </div>
     );
   }
