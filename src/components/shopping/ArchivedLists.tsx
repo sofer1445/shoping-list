@@ -5,6 +5,7 @@ import { useToast } from "../ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/components/AuthProvider";
 
 interface ArchivedList {
   id: string;
@@ -14,25 +15,44 @@ interface ArchivedList {
 
 export const ArchivedLists = () => {
   const [archivedLists, setArchivedLists] = useState<ArchivedList[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchArchivedLists();
-  }, []);
+    if (user) {
+      fetchArchivedLists();
+    }
+  }, [user]);
 
-  const fetchArchivedLists = async () => {
+  const fetchArchivedLists = async (retryCount = 0) => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from("shopping_lists")
         .select("id, name, archived_at")
         .eq("archived", true)
+        .eq("created_by", user?.id)
         .order("archived_at", { ascending: false });
 
       if (error) throw error;
       setArchivedLists(data || []);
     } catch (error) {
       console.error("Error fetching archived lists:", error);
+      // Retry up to 3 times with exponential backoff
+      if (retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        setTimeout(() => fetchArchivedLists(retryCount + 1), delay);
+      } else {
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן היה לטעון את הרשימות המאורכבות",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -44,7 +64,8 @@ export const ArchivedLists = () => {
           archived: false,
           archived_at: null,
         })
-        .eq("id", listId);
+        .eq("id", listId)
+        .eq("created_by", user?.id);
 
       if (error) throw error;
 
@@ -69,6 +90,14 @@ export const ArchivedLists = () => {
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="text-center text-muted-foreground p-4">
+        טוען רשימות...
+      </div>
+    );
+  }
 
   if (archivedLists.length === 0) {
     return (
