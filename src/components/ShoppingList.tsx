@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
 import { SearchBar } from "./shopping/SearchBar";
 import { AddItemForm } from "./shopping/AddItemForm";
 import { FilterButtons } from "./shopping/FilterButtons";
@@ -12,6 +12,7 @@ import { ShoppingItem } from "./shopping/types";
 import { useToast } from "./ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
@@ -22,6 +23,7 @@ export const ShoppingList = () => {
   const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
   const [currentListId, setCurrentListId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -47,7 +49,10 @@ export const ShoppingList = () => {
       if (!existingLists?.length) {
         const { data: newList, error: createError } = await supabase
           .from("shopping_lists")
-          .insert({ name: "רשימת קניות" })
+          .insert({ 
+            name: "רשימת קניות",
+            created_by: user?.id 
+          })
           .select()
           .single();
 
@@ -94,6 +99,7 @@ export const ShoppingList = () => {
         .insert({
           ...newItem,
           list_id: currentListId,
+          created_by: user?.id
         })
         .select()
         .single();
