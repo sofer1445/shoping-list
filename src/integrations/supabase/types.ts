@@ -93,18 +93,24 @@ export type Database = {
       }
       shopping_lists: {
         Row: {
+          archived: boolean | null
+          archived_at: string | null
           created_at: string
           created_by: string
           id: string
           name: string
         }
         Insert: {
+          archived?: boolean | null
+          archived_at?: string | null
           created_at?: string
           created_by: string
           id?: string
           name: string
         }
         Update: {
+          archived?: boolean | null
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           id?: string
