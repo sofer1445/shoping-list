@@ -19,8 +19,8 @@ const AuthPage = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Get the current URL without any trailing slashes or colons
-  const redirectTo = `${window.location.origin}/auth/callback`;
+  // Get the current URL and ensure it's properly formatted
+  const redirectTo = window.location.origin + '/auth/callback';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
