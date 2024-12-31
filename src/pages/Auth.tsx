@@ -49,7 +49,7 @@ const AuthPage = () => {
           providers={["google"]}
           redirectTo={redirectTo}
           view="sign_in"
-          showLinks={true}
+          showLinks={false}
           localization={{
             variables: {
               sign_in: {
@@ -57,12 +57,14 @@ const AuthPage = () => {
                 password_label: 'סיסמה',
                 button_label: 'התחבר',
                 social_provider_text: "התחבר באמצעות Google",
+                link_text: "כבר יש לך חשבון? התחבר",
               },
               sign_up: {
                 email_label: 'אימייל',
                 password_label: 'סיסמה',
                 button_label: 'הירשם',
                 social_provider_text: "הירשם באמצעות Google",
+                link_text: "אין לך חשבון? הירשם",
               },
             },
           }}
