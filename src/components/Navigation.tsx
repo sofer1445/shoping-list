@@ -4,6 +4,7 @@ import { User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useToast } from "./ui/use-toast";
+import { Button } from "./ui/button";
 
 export const Navigation = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -23,12 +24,20 @@ export const Navigation = () => {
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "התנתקת בהצלחה",
-      description: "להתראות!",
-    });
-    navigate("/auth");
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "שגיאה בהתנתקות",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "התנתקת בהצלחה",
+        description: "להתראות!",
+      });
+      navigate("/auth");
+    }
   };
 
   if (!user) return null;
@@ -40,13 +49,14 @@ export const Navigation = () => {
           <div className="flex items-center">
             <span className="text-gray-700">{user.email}</span>
           </div>
-          <button
+          <Button
             onClick={handleLogout}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            variant="destructive"
+            className="inline-flex items-center"
           >
             <LogOut className="h-4 w-4 mr-2" />
             התנתק
-          </button>
+          </Button>
         </div>
       </div>
     </nav>

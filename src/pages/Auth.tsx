@@ -67,7 +67,6 @@ const AuthPage = () => {
               },
             },
           }}
-          onlyThirdPartyProviders={true}
         />
       </div>
     </div>
