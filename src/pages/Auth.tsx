@@ -19,8 +19,8 @@ const AuthPage = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Construct the redirect URL properly
-  const redirectTo = window.location.origin + '/auth/callback';
+  // Use the exact URL format as configured in Supabase
+  const redirectTo = 'https://preview--savvy-shopper-list.lovable.app/';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
