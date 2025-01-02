@@ -26,25 +26,27 @@ export const useShoppingList = () => {
     if (!user) return;
 
     try {
-      // First check if user has any non-archived lists
-      const { data: existingLists, error: fetchError } = await supabase
+      // First check if user has any non-archived lists using a simpler query
+      const { data: lists, error: fetchError } = await supabase
         .from("shopping_lists")
         .select("id")
         .eq("created_by", user.id)
         .eq("archived", false)
-        .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
+      if (fetchError) {
+        console.error("Error fetching lists:", fetchError);
         throw fetchError;
       }
 
-      if (!existingLists) {
+      if (!lists) {
+        // Create a new list if none exists
         const { data: newList, error: createError } = await supabase
           .from("shopping_lists")
           .insert({ 
             name: "רשימת קניות",
-            created_by: user.id 
+            created_by: user.id,
+            archived: false
           })
           .select()
           .single();
@@ -52,7 +54,7 @@ export const useShoppingList = () => {
         if (createError) throw createError;
         setCurrentListId(newList.id);
       } else {
-        setCurrentListId(existingLists.id);
+        setCurrentListId(lists.id);
       }
     } catch (error: any) {
       console.error("Error creating/fetching list:", error);
@@ -95,9 +97,9 @@ export const useShoppingList = () => {
         .from('profiles')
         .select('id')
         .eq('username', email)
-        .single();
+        .maybeSingle();
 
-      if (userError) {
+      if (userError || !userProfile) {
         toast({
           title: "שגיאה",
           description: "לא נמצא משתמש עם כתובת האימייל הזו",
@@ -112,7 +114,7 @@ export const useShoppingList = () => {
         .select('*')
         .eq('list_id', currentListId)
         .eq('shared_with', userProfile.id)
-        .single();
+        .maybeSingle();
 
       if (existingShare) {
         toast({
