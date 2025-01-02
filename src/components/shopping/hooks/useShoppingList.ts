@@ -11,8 +11,10 @@ export const useShoppingList = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    createInitialList();
-  }, []);
+    if (user) {
+      createInitialList();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (currentListId) {
@@ -22,9 +24,11 @@ export const useShoppingList = () => {
 
   const createInitialList = async () => {
     try {
+      // First check if user has any non-archived lists
       const { data: existingLists, error: fetchError } = await supabase
         .from("shopping_lists")
         .select("id")
+        .eq("created_by", user?.id)
         .eq("archived", false)
         .limit(1);
 
@@ -67,6 +71,11 @@ export const useShoppingList = () => {
       setItems(data || []);
     } catch (error) {
       console.error("Error fetching items:", error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן היה לטעון את הפריטים",
+        variant: "destructive",
+      });
     }
   };
 
