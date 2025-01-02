@@ -8,7 +8,6 @@ import { SortableItem } from "./shopping/SortableItem";
 import { EditItemDialog } from "./shopping/EditItemDialog";
 import { ArchivedLists } from "./shopping/ArchivedLists";
 import { ArchiveButton } from "./shopping/ArchiveButton";
-import { ShareListDialog } from "./shopping/ShareListDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useShoppingList } from "./shopping/hooks/useShoppingList";
 import { useShoppingItems } from "./shopping/hooks/useShoppingItems";
@@ -26,7 +25,6 @@ export const ShoppingList = () => {
     setItems,
     currentListId,
     setCurrentListId,
-    shareList,
   } = useShoppingList();
 
   const {
@@ -82,10 +80,7 @@ export const ShoppingList = () => {
 
         <TabsContent value="current">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex gap-2">
-              <ArchiveButton listId={currentListId!} onArchive={handleArchive} />
-              <ShareListDialog onShare={shareList} />
-            </div>
+            <ArchiveButton listId={currentListId!} onArchive={handleArchive} />
             <h1 className="text-2xl font-bold">רשימת קניות</h1>
           </div>
 
