@@ -41,23 +41,48 @@ export const useShoppingList = () => {
       }
 
       if (!existingList) {
-        // Create a new list if none exists
-        const { data: newList, error: createError } = await supabase
+        // Check if the specific list exists and is not owned by anyone
+        const { data: specificList, error: specificListError } = await supabase
           .from("shopping_lists")
-          .insert({
-            name: "רשימת קניות",
-            created_by: user.id,
-            archived: false,
-          })
-          .select()
-          .single();
+          .select("*")
+          .eq("id", "2131fdff-89a1-4764-81e6-f9f82011f54c")
+          .maybeSingle();
 
-        if (createError) throw createError;
-        setCurrentListId(newList.id);
-        toast({
-          title: "רשימה חדשה נוצרה",
-          description: "רשימת קניות חדשה נוצרה בהצלחה",
-        });
+        if (specificListError) throw specificListError;
+
+        if (specificList) {
+          // Update the list ownership
+          const { error: updateError } = await supabase
+            .from("shopping_lists")
+            .update({ created_by: user.id })
+            .eq("id", "2131fdff-89a1-4764-81e6-f9f82011f54c");
+
+          if (updateError) throw updateError;
+
+          setCurrentListId("2131fdff-89a1-4764-81e6-f9f82011f54c");
+          toast({
+            title: "רשימה שוחזרה",
+            description: "הרשימה שוחזרה בהצלחה",
+          });
+        } else {
+          // Create a new list if the specific list doesn't exist
+          const { data: newList, error: createError } = await supabase
+            .from("shopping_lists")
+            .insert({
+              name: "רשימת קניות",
+              created_by: user.id,
+              archived: false,
+            })
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          setCurrentListId(newList.id);
+          toast({
+            title: "רשימה חדשה נוצרה",
+            description: "רשימת קניות חדשה נוצרה בהצלחה",
+          });
+        }
       } else {
         setCurrentListId(existingList.id);
       }
