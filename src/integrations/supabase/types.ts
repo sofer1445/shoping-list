@@ -9,6 +9,55 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      list_shares: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          list_id: string | null
+          permission: Database["public"]["Enums"]["share_permission"]
+          shared_with: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          list_id?: string | null
+          permission?: Database["public"]["Enums"]["share_permission"]
+          shared_with?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          list_id?: string | null
+          permission?: Database["public"]["Enums"]["share_permission"]
+          shared_with?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_shares_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_shares_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_shares_shared_with_fkey"
+            columns: ["shared_with"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -134,7 +183,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      share_permission: "view" | "edit"
     }
     CompositeTypes: {
       [_ in never]: never
