@@ -12,6 +12,8 @@ const AuthPage = () => {
       (event, session) => {
         if (session) {
           navigate("/");
+        } else {
+          navigate("/auth");
         }
       }
     );

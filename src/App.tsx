@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import AuthPage from "./pages/Auth";
 import { AuthProvider, useAuth } from "./components/AuthProvider";
 import { Navigation } from "./components/Navigation";
+import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,7 +20,26 @@ const queryClient = new QueryClient({
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuthState = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/auth");
+      } else {
+        setUser(session.user);
+      }
+      setIsLoading(false);
+    };
+
+    checkAuthState();
+  }, []);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }

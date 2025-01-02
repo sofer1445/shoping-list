@@ -6,9 +6,55 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// Add a new policy to handle the `shopping_lists` relation without causing infinite recursion
-supabase.rpc('create_policy', {
+// Drop existing policies
+await supabase.rpc('drop_policy', {
   table_name: 'shopping_lists',
-  policy_name: 'prevent_infinite_recursion',
-  definition: 'WITH RECURSIVE policy_cte AS (SELECT 1) SELECT 1 FROM policy_cte LIMIT 1'
+  policy_name: 'enable_select_for_users'
+});
+await supabase.rpc('drop_policy', {
+  table_name: 'shopping_lists',
+  policy_name: 'enable_insert_for_users'
+});
+await supabase.rpc('drop_policy', {
+  table_name: 'shopping_lists',
+  policy_name: 'enable_update_for_owners'
+});
+await supabase.rpc('drop_policy', {
+  table_name: 'shopping_lists',
+  policy_name: 'enable_delete_for_owners'
+});
+
+// Enable RLS on the table
+await supabase.rpc('enable_rls', {
+  table_name: 'shopping_lists'
+});
+
+// Create simplified policies
+await supabase.rpc('create_policy', {
+  table_name: 'shopping_lists',
+  policy_name: 'enable_select_for_users',
+  definition: 'USING (created_by = auth.uid())',
+  action: 'SELECT',
+  role: 'authenticated'
+});
+await supabase.rpc('create_policy', {
+  table_name: 'shopping_lists',
+  policy_name: 'enable_insert_for_users',
+  definition: 'WITH CHECK (created_by = auth.uid())',
+  action: 'INSERT',
+  role: 'authenticated'
+});
+await supabase.rpc('create_policy', {
+  table_name: 'shopping_lists',
+  policy_name: 'enable_update_for_owners',
+  definition: 'USING (created_by = auth.uid())',
+  action: 'UPDATE',
+  role: 'authenticated'
+});
+await supabase.rpc('create_policy', {
+  table_name: 'shopping_lists',
+  policy_name: 'enable_delete_for_owners',
+  definition: 'USING (created_by = auth.uid())',
+  action: 'DELETE',
+  role: 'authenticated'
 });
