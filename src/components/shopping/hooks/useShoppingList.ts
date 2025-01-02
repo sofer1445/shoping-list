@@ -26,12 +26,13 @@ export const useShoppingList = () => {
     if (!user) return;
 
     try {
-      // First check if user has any non-archived lists using a simpler query
-      const { data: lists, error: fetchError } = await supabase
+      // First check for any non-archived lists
+      const { data: existingList, error: fetchError } = await supabase
         .from("shopping_lists")
         .select("id")
         .eq("created_by", user.id)
         .eq("archived", false)
+        .limit(1)
         .maybeSingle();
 
       if (fetchError) {
@@ -39,22 +40,26 @@ export const useShoppingList = () => {
         throw fetchError;
       }
 
-      if (!lists) {
+      if (!existingList) {
         // Create a new list if none exists
         const { data: newList, error: createError } = await supabase
           .from("shopping_lists")
-          .insert({ 
+          .insert({
             name: "רשימת קניות",
             created_by: user.id,
-            archived: false
+            archived: false,
           })
           .select()
           .single();
 
         if (createError) throw createError;
         setCurrentListId(newList.id);
+        toast({
+          title: "רשימה חדשה נוצרה",
+          description: "רשימת קניות חדשה נוצרה בהצלחה",
+        });
       } else {
-        setCurrentListId(lists.id);
+        setCurrentListId(existingList.id);
       }
     } catch (error: any) {
       console.error("Error creating/fetching list:", error);
@@ -115,6 +120,8 @@ export const useShoppingList = () => {
         .eq('list_id', currentListId)
         .eq('shared_with', userProfile.id)
         .maybeSingle();
+
+      if (shareCheckError) throw shareCheckError;
 
       if (existingShare) {
         toast({
