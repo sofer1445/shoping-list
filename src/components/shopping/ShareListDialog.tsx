@@ -44,6 +44,23 @@ export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
         return;
       }
 
+      // Check if the list is already shared with this user
+      const { data: existingShare } = await supabase
+        .from('list_shares')
+        .select('id')
+        .eq('list_id', listId)
+        .eq('shared_with', profile.id)
+        .maybeSingle();
+
+      if (existingShare) {
+        toast({
+          title: "הרשימה כבר משותפת",
+          description: `הרשימה כבר משותפת עם ${email}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Then create the share
       const { error: shareError } = await supabase
         .from('list_shares')
