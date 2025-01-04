@@ -5,20 +5,62 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Share } from "lucide-react";
+import { useToast } from "../ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ShareListDialogProps {
-  onShare: (email: string, permission: 'view' | 'edit') => Promise<void>;
+  listId: string;
 }
 
-export const ShareListDialog = ({ onShare }: ShareListDialogProps) => {
+export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
   const [email, setEmail] = useState("");
   const [permission, setPermission] = useState<'view' | 'edit'>('view');
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
 
   const handleShare = async () => {
-    await onShare(email, permission);
-    setEmail("");
-    setIsOpen(false);
+    try {
+      // First get the user id from the profiles table
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', email)
+        .single();
+
+      if (profileError || !profiles) {
+        toast({
+          title: "שגיאה",
+          description: "לא נמצא משתמש עם האימייל הזה",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Then create the share
+      const { error: shareError } = await supabase
+        .from('list_shares')
+        .insert({
+          list_id: listId,
+          shared_with: profiles.id,
+          permission: permission,
+        });
+
+      if (shareError) throw shareError;
+
+      toast({
+        title: "הרשימה שותפה בהצלחה",
+        description: `הרשימה שותפה עם ${email}`,
+      });
+      setEmail("");
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error sharing list:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן היה לשתף את הרשימה",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
