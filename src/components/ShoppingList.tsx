@@ -81,6 +81,67 @@ export const ShoppingList = () => {
     setCurrentListId(null);
   };
 
+  const renderShoppingList = () => (
+    <>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex gap-2">
+          <ArchiveButton listId={currentListId!} onArchive={handleArchive} />
+          {currentListId && <ShareListDialog listId={currentListId} />}
+        </div>
+        <h1 className="text-2xl font-bold">רשימת קניות</h1>
+      </div>
+
+      <div className="flex flex-col gap-4 mb-6">
+        <SearchBar
+          searchQuery={searchQuery}
+          items={items}
+          onSearch={setSearchQuery}
+          onSelectSuggestion={(itemName) => {
+            const item = items.find(i => i.name === itemName);
+            if (item) {
+              setEditingItem(item);
+            }
+          }}
+        />
+
+        <AddItemForm onAdd={addItem} categories={categories} />
+      </div>
+
+      <FilterButtons filter={filter} onFilterChange={setFilter} />
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={filteredItems}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-2">
+            {filteredItems.map((item) => (
+              <SortableItem
+                key={item.id}
+                item={item}
+                onDelete={deleteItem}
+                onToggle={toggleItem}
+                onEdit={() => setEditingItem(item)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      <EditItemDialog
+        item={editingItem}
+        isOpen={!!editingItem}
+        onClose={() => setEditingItem(null)}
+        onSave={handleSaveEdit}
+        categories={categories}
+      />
+    </>
+  );
+
   return (
     <div className="max-w-md mx-auto p-4 min-h-screen bg-white">
       <Tabs defaultValue={searchParams.get("list") ? "shared" : "current"}>
@@ -91,66 +152,11 @@ export const ShoppingList = () => {
         </TabsList>
 
         <TabsContent value="current">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex gap-2">
-              <ArchiveButton listId={currentListId!} onArchive={handleArchive} />
-              {currentListId && <ShareListDialog listId={currentListId} />}
-            </div>
-            <h1 className="text-2xl font-bold">רשימת קניות</h1>
-          </div>
-
-          <div className="flex flex-col gap-4 mb-6">
-            <SearchBar
-              searchQuery={searchQuery}
-              items={items}
-              onSearch={setSearchQuery}
-              onSelectSuggestion={(itemName) => {
-                const item = items.find(i => i.name === itemName);
-                if (item) {
-                  setEditingItem(item);
-                }
-              }}
-            />
-
-            <AddItemForm onAdd={addItem} categories={categories} />
-          </div>
-
-          <FilterButtons filter={filter} onFilterChange={setFilter} />
-
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={filteredItems}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2">
-                {filteredItems.map((item) => (
-                  <SortableItem
-                    key={item.id}
-                    item={item}
-                    onDelete={deleteItem}
-                    onToggle={toggleItem}
-                    onEdit={() => setEditingItem(item)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-
-          <EditItemDialog
-            item={editingItem}
-            isOpen={!!editingItem}
-            onClose={() => setEditingItem(null)}
-            onSave={handleSaveEdit}
-            categories={categories}
-          />
+          {!searchParams.get("list") && renderShoppingList()}
         </TabsContent>
 
         <TabsContent value="shared">
-          <SharedLists />
+          {searchParams.get("list") ? renderShoppingList() : <SharedLists />}
         </TabsContent>
 
         <TabsContent value="archived">
