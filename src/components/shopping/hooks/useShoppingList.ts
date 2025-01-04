@@ -11,7 +11,7 @@ export const useShoppingList = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
+    if (user && !currentListId) {
       createInitialList();
     }
   }, [user]);

@@ -83,7 +83,7 @@ export const ShoppingList = () => {
 
   return (
     <div className="max-w-md mx-auto p-4 min-h-screen bg-white">
-      <Tabs defaultValue="current">
+      <Tabs defaultValue={searchParams.get("list") ? "shared" : "current"}>
         <TabsList className="w-full mb-6">
           <TabsTrigger value="current" className="flex-1">רשימה נוכחית</TabsTrigger>
           <TabsTrigger value="shared" className="flex-1">רשימות משותפות</TabsTrigger>
