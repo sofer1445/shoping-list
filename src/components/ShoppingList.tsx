@@ -81,14 +81,20 @@ export const ShoppingList = () => {
     setCurrentListId(null);
   };
 
-  const renderShoppingList = () => (
+  const renderShoppingList = (isSharedList: boolean = false) => (
     <>
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-2">
-          <ArchiveButton listId={currentListId!} onArchive={handleArchive} />
-          {currentListId && <ShareListDialog listId={currentListId} />}
+          {!isSharedList && (
+            <>
+              <ArchiveButton listId={currentListId!} onArchive={handleArchive} />
+              <ShareListDialog listId={currentListId!} />
+            </>
+          )}
         </div>
-        <h1 className="text-2xl font-bold">רשימת קניות</h1>
+        <h1 className="text-2xl font-bold">
+          {isSharedList ? "רשימה משותפת" : "רשימת קניות"}
+        </h1>
       </div>
 
       <div className="flex flex-col gap-4 mb-6">
@@ -144,7 +150,7 @@ export const ShoppingList = () => {
 
   return (
     <div className="max-w-md mx-auto p-4 min-h-screen bg-white">
-      <Tabs defaultValue={searchParams.get("list") ? "shared" : "current"}>
+      <Tabs defaultValue="current">
         <TabsList className="w-full mb-6">
           <TabsTrigger value="current" className="flex-1">רשימה נוכחית</TabsTrigger>
           <TabsTrigger value="shared" className="flex-1">רשימות משותפות</TabsTrigger>
@@ -152,11 +158,15 @@ export const ShoppingList = () => {
         </TabsList>
 
         <TabsContent value="current">
-          {!searchParams.get("list") && renderShoppingList()}
+          {renderShoppingList(false)}
         </TabsContent>
 
         <TabsContent value="shared">
-          {searchParams.get("list") ? renderShoppingList() : <SharedLists />}
+          {searchParams.get("list") ? (
+            renderShoppingList(true)
+          ) : (
+            <SharedLists />
+          )}
         </TabsContent>
 
         <TabsContent value="archived">
