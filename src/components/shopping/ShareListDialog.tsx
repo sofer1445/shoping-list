@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Share } from "lucide-react";
 import { useToast } from "../ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 
 interface ShareListDialogProps {
   listId: string;
@@ -17,8 +18,11 @@ export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
   const [permission, setPermission] = useState<'view' | 'edit'>('view');
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleShare = async () => {
+    if (!user) return;
+
     try {
       // First get the user id from the profiles table
       const { data: profiles, error: profileError } = await supabase
@@ -43,6 +47,7 @@ export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
           list_id: listId,
           shared_with: profiles.id,
           permission: permission,
+          created_by: user.id
         });
 
       if (shareError) throw shareError;
