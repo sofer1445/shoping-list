@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
 interface SharedList {
@@ -35,11 +34,11 @@ export const SharedLists = () => {
         .select(`
           list_id,
           permission,
-          shopping_lists (
+          shopping_lists!inner (
             id,
             name
           ),
-          created_by (
+          profiles!list_shares_created_by_fkey (
             username
           )
         `)
@@ -51,7 +50,9 @@ export const SharedLists = () => {
         const formattedLists = data.map((share) => ({
           id: share.shopping_lists.id,
           name: share.shopping_lists.name,
-          shared_by: share.created_by,
+          shared_by: {
+            username: share.profiles.username
+          },
           permission: share.permission,
         }));
         setSharedLists(formattedLists);
