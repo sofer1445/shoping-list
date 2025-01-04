@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
 import { SearchBar } from "./shopping/SearchBar";
@@ -7,16 +7,19 @@ import { FilterButtons } from "./shopping/FilterButtons";
 import { SortableItem } from "./shopping/SortableItem";
 import { EditItemDialog } from "./shopping/EditItemDialog";
 import { ArchivedLists } from "./shopping/ArchivedLists";
+import { SharedLists } from "./shopping/SharedLists";
 import { ArchiveButton } from "./shopping/ArchiveButton";
 import { ShareListDialog } from "./shopping/ShareListDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useShoppingList } from "./shopping/hooks/useShoppingList";
 import { useShoppingItems } from "./shopping/hooks/useShoppingItems";
 import { ShoppingItem } from "./shopping/types";
+import { useSearchParams } from "react-router-dom";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
 export const ShoppingList = () => {
+  const [searchParams] = useSearchParams();
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
@@ -27,6 +30,13 @@ export const ShoppingList = () => {
     currentListId,
     setCurrentListId,
   } = useShoppingList();
+
+  useEffect(() => {
+    const listId = searchParams.get("list");
+    if (listId) {
+      setCurrentListId(listId);
+    }
+  }, [searchParams]);
 
   const {
     addItem,
@@ -76,6 +86,7 @@ export const ShoppingList = () => {
       <Tabs defaultValue="current">
         <TabsList className="w-full mb-6">
           <TabsTrigger value="current" className="flex-1">רשימה נוכחית</TabsTrigger>
+          <TabsTrigger value="shared" className="flex-1">רשימות משותפות</TabsTrigger>
           <TabsTrigger value="archived" className="flex-1">ארכיון</TabsTrigger>
         </TabsList>
 
@@ -136,6 +147,10 @@ export const ShoppingList = () => {
             onSave={handleSaveEdit}
             categories={categories}
           />
+        </TabsContent>
+
+        <TabsContent value="shared">
+          <SharedLists />
         </TabsContent>
 
         <TabsContent value="archived">
