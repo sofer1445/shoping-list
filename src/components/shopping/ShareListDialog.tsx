@@ -25,16 +25,20 @@ export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
 
     try {
       // First get the user id from the profiles table
-      const { data: profiles, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', email)
-        .single();
+        .maybeSingle();
 
-      if (profileError || !profiles) {
+      if (profileError) {
+        throw profileError;
+      }
+
+      if (!profile) {
         toast({
-          title: "שגיאה",
-          description: "לא נמצא משתמש עם האימייל הזה",
+          title: "משתמש לא נמצא",
+          description: "לא נמצא משתמש עם האימייל שהוזן. אנא ודא שהמשתמש נרשם למערכת",
           variant: "destructive",
         });
         return;
@@ -45,7 +49,7 @@ export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
         .from('list_shares')
         .insert({
           list_id: listId,
-          shared_with: profiles.id,
+          shared_with: profile.id,
           permission: permission,
           created_by: user.id
         });
