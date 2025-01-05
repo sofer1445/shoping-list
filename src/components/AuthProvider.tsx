@@ -24,28 +24,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-      
-      if (!session && location.pathname !== '/auth') {
+    // Initialize the session
+    const initSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        setUser(session?.user ?? null);
+        
+        if (!session && location.pathname !== '/auth') {
+          navigate('/auth');
+        }
+      } catch (error) {
+        console.error("Error getting session:", error);
         navigate('/auth');
+      } finally {
+        setIsLoading(false);
       }
-    });
+    };
+
+    initSession();
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
-      if (!session && location.pathname !== '/auth') {
+      
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        setUser(null);
+        navigate('/auth');
+      } else if (event === 'SIGNED_IN' && location.pathname === '/auth') {
+        navigate('/');
+      } else if (!session && location.pathname !== '/auth') {
         navigate('/auth');
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [navigate, location]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate, location.pathname]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
