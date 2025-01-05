@@ -3,6 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Trash2, Edit, Check, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShoppingItem } from "./types";
+import { ProductImage } from "./ProductImage";
 
 interface SortableItemProps {
   item: ShoppingItem;
@@ -72,12 +73,15 @@ export const SortableItem = ({
         >
           {item.completed && <Check size={16} />}
         </button>
-        <div>
-          <div className={cn(item.completed && "line-through")}>
-            {item.name}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {item.category} • {item.quantity}
+        <div className="flex items-center gap-3">
+          <ProductImage productName={item.name} category={item.category} />
+          <div>
+            <div className={cn(item.completed && "line-through")}>
+              {item.name}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {item.category} • {item.quantity}
+            </div>
           </div>
         </div>
       </div>
