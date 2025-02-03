@@ -33,6 +33,13 @@ export const ShoppingList = () => {
     fetchItems
   } = useShoppingList();
 
+  const {
+    addItem,
+    toggleItem,
+    deleteItem,
+    handleSaveEdit,
+  } = useShoppingItems(items, setItems, currentListId);
+
   useEffect(() => {
     const listId = searchParams.get("list");
     if (listId) {
