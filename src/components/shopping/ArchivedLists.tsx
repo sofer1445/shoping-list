@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArchiveRestore } from "lucide-react";
+import { ArchiveRestore, MoveRight } from "lucide-react";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ export const ArchivedLists = () => {
   const [archivedLists, setArchivedLists] = useState<ArchivedList[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -101,7 +102,6 @@ export const ArchivedLists = () => {
 
       if (error) throw error;
 
-      // Also restore all items in the list
       const { error: itemsError } = await supabase
         .from("shopping_items")
         .update({
@@ -118,6 +118,7 @@ export const ArchivedLists = () => {
       });
 
       fetchArchivedLists();
+      window.dispatchEvent(new CustomEvent('shopping-list-updated'));
       navigate("/");
     } catch (error) {
       console.error("Error restoring list:", error);
@@ -131,25 +132,45 @@ export const ArchivedLists = () => {
 
   const handleRestoreItem = async (item: ShoppingItem) => {
     try {
-      const { error } = await supabase
-        .from("shopping_items")
-        .update({
-          archived: false,
-          archived_at: null,
-        })
-        .eq("id", item.id);
+      const { data: currentList } = await supabase
+        .from("shopping_lists")
+        .select("id")
+        .eq("created_by", user?.id)
+        .eq("archived", false)
+        .single();
 
-      if (error) throw error;
+      if (!currentList) {
+        toast({
+          title: "שגיאה",
+          description: "לא נמצאה רשימה פעילה",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create a new item in the current list
+      const { error: createError } = await supabase
+        .from("shopping_items")
+        .insert({
+          name: item.name,
+          quantity: item.quantity,
+          category: item.category,
+          list_id: currentList.id,
+          created_by: user?.id,
+        });
+
+      if (createError) throw createError;
 
       toast({
         title: "פריט שוחזר",
-        description: `${item.name} שוחזר בהצלחה`,
+        description: `${item.name} הועבר לרשימה הנוכחית`,
       });
 
-      // After restoring the item, refresh both the archived lists and trigger a refresh of the current list
-      fetchArchivedLists();
-      // Force a refresh of the current route to update the shopping list
+      // Force a refresh of the current list
       window.dispatchEvent(new CustomEvent('shopping-list-updated'));
+      
+      // Update selected items state
+      setSelectedItems(prev => ({ ...prev, [item.id]: false }));
     } catch (error) {
       console.error("Error restoring item:", error);
       toast({
@@ -158,6 +179,19 @@ export const ArchivedLists = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleMoveSelectedItems = async (listId: string) => {
+    const itemsToMove = archivedLists
+      .find(list => list.id === listId)
+      ?.items?.filter(item => selectedItems[item.id]) || [];
+
+    for (const item of itemsToMove) {
+      await handleRestoreItem(item);
+    }
+
+    // Clear selection after moving
+    setSelectedItems({});
   };
 
   if (isLoading) {
@@ -198,18 +232,34 @@ export const ArchivedLists = () => {
         {archivedLists.map((list) => (
           <AccordionItem key={list.id} value={list.id} className="border rounded-lg p-4">
             <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRestoreList(list.id);
-                }}
-                className="gap-2"
-              >
-                <ArchiveRestore size={16} />
-                שחזר רשימה
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRestoreList(list.id);
+                  }}
+                  className="gap-2"
+                >
+                  <ArchiveRestore size={16} />
+                  שחזר רשימה
+                </Button>
+                {Object.values(selectedItems).some(Boolean) && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoveSelectedItems(list.id);
+                    }}
+                    className="gap-2"
+                  >
+                    <MoveRight size={16} />
+                    העבר לרשימה נוכחית
+                  </Button>
+                )}
+              </div>
               <div className="text-right">
                 <AccordionTrigger className="hover:no-underline">
                   <div>
@@ -228,15 +278,29 @@ export const ArchivedLists = () => {
                     key={item.id}
                     className="flex items-center justify-between p-2 bg-secondary/50 rounded-lg"
                   >
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRestoreItem(item)}
-                      className="gap-2"
-                    >
-                      <ArchiveRestore size={16} />
-                      שחזר פריט
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedItems[item.id] || false}
+                        onChange={(e) => {
+                          setSelectedItems(prev => ({
+                            ...prev,
+                            [item.id]: e.target.checked
+                          }));
+                        }}
+                        className="h-4 w-4"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRestoreItem(item)}
+                        className="gap-2"
+                      >
+                        <ArchiveRestore size={16} />
+                        שחזר פריט
+                      </Button>
+                    </div>
                     <div className="text-right">
                       <div className="font-medium">{item.name}</div>
                       <div className="text-sm text-muted-foreground">
