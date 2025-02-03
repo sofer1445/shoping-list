@@ -30,6 +30,7 @@ export const ShoppingList = () => {
     setItems,
     currentListId,
     setCurrentListId,
+    fetchItems
   } = useShoppingList();
 
   useEffect(() => {
@@ -40,12 +41,19 @@ export const ShoppingList = () => {
     }
   }, [searchParams]);
 
-  const {
-    addItem,
-    toggleItem,
-    deleteItem,
-    handleSaveEdit,
-  } = useShoppingItems(items, setItems, currentListId);
+  // Add event listener for shopping list updates
+  useEffect(() => {
+    const handleListUpdate = () => {
+      if (currentListId) {
+        fetchItems();
+      }
+    };
+
+    window.addEventListener('shopping-list-updated', handleListUpdate);
+    return () => {
+      window.removeEventListener('shopping-list-updated', handleListUpdate);
+    };
+  }, [currentListId, fetchItems]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -79,17 +87,13 @@ export const ShoppingList = () => {
     return matchesFilter && matchesSearch;
   });
 
-  const handleArchive = () => {
-    setCurrentListId(null);
-  };
-
   const renderShoppingList = (isSharedList: boolean = false) => (
     <>
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-2">
           {!isSharedList && (
             <>
-              <ArchiveButton listId={currentListId!} onArchive={handleArchive} />
+              <ArchiveButton listId={currentListId!} onArchive={() => setCurrentListId(null)} />
               <ShareListDialog listId={currentListId!} />
             </>
           )}

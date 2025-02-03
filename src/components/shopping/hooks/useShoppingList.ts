@@ -77,6 +77,7 @@ export const useShoppingList = () => {
         .from("shopping_items")
         .select("*")
         .eq("list_id", currentListId)
+        .eq("archived", false)
         .order("created_at", { ascending: true });
 
       if (error) throw error;

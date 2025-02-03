@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArchiveRestore, ChevronDown, ChevronUp } from "lucide-react";
+import { ArchiveRestore } from "lucide-react";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +23,6 @@ interface ArchivedList {
 
 export const ArchivedLists = () => {
   const [archivedLists, setArchivedLists] = useState<ArchivedList[]>([]);
-  const [expandedLists, setExpandedLists] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -147,7 +146,10 @@ export const ArchivedLists = () => {
         description: `${item.name} שוחזר בהצלחה`,
       });
 
+      // After restoring the item, refresh both the archived lists and trigger a refresh of the current list
       fetchArchivedLists();
+      // Force a refresh of the current route to update the shopping list
+      window.dispatchEvent(new CustomEvent('shopping-list-updated'));
     } catch (error) {
       console.error("Error restoring item:", error);
       toast({
