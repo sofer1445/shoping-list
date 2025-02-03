@@ -81,6 +81,8 @@ export type Database = {
       }
       shopping_items: {
         Row: {
+          archived: boolean | null
+          archived_at: string | null
           category: string
           completed: boolean
           completed_at: string | null
@@ -93,6 +95,8 @@ export type Database = {
           quantity: number
         }
         Insert: {
+          archived?: boolean | null
+          archived_at?: string | null
           category: string
           completed?: boolean
           completed_at?: string | null
@@ -105,6 +109,8 @@ export type Database = {
           quantity?: number
         }
         Update: {
+          archived?: boolean | null
+          archived_at?: string | null
           category?: string
           completed?: boolean
           completed_at?: string | null

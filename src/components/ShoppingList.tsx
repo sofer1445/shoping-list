@@ -23,6 +23,7 @@ export const ShoppingList = () => {
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
+  const [activeTab, setActiveTab] = useState("current");
 
   const {
     items,
@@ -35,6 +36,7 @@ export const ShoppingList = () => {
     const listId = searchParams.get("list");
     if (listId) {
       setCurrentListId(listId);
+      setActiveTab("shared");
     }
   }, [searchParams]);
 
@@ -150,7 +152,7 @@ export const ShoppingList = () => {
 
   return (
     <div className="max-w-md mx-auto p-4 min-h-screen bg-white">
-      <Tabs defaultValue="current">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full mb-6">
           <TabsTrigger value="current" className="flex-1">רשימה נוכחית</TabsTrigger>
           <TabsTrigger value="shared" className="flex-1">רשימות משותפות</TabsTrigger>
@@ -158,7 +160,7 @@ export const ShoppingList = () => {
         </TabsList>
 
         <TabsContent value="current">
-          {renderShoppingList(false)}
+          {currentListId && !searchParams.get("list") && renderShoppingList(false)}
         </TabsContent>
 
         <TabsContent value="shared">

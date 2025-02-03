@@ -1,20 +1,29 @@
 import { useEffect, useState } from "react";
-import { ArchiveRestore } from "lucide-react";
+import { ArchiveRestore, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
+import { ShoppingItem } from "./types";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface ArchivedList {
   id: string;
   name: string;
   archived_at: string;
+  items?: ShoppingItem[];
 }
 
 export const ArchivedLists = () => {
   const [archivedLists, setArchivedLists] = useState<ArchivedList[]>([]);
+  const [expandedLists, setExpandedLists] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -36,18 +45,31 @@ export const ArchivedLists = () => {
         throw new Error("No authenticated user found");
       }
 
-      const { data, error: supabaseError } = await supabase
+      const { data: lists, error: listsError } = await supabase
         .from("shopping_lists")
         .select("id, name, archived_at")
         .eq("archived", true)
         .eq("created_by", user.id)
         .order("archived_at", { ascending: false });
 
-      if (supabaseError) {
-        throw supabaseError;
-      }
+      if (listsError) throw listsError;
 
-      setArchivedLists(data || []);
+      const listsWithItems = await Promise.all(
+        (lists || []).map(async (list) => {
+          const { data: items } = await supabase
+            .from("shopping_items")
+            .select("*")
+            .eq("list_id", list.id)
+            .order("created_at", { ascending: true });
+
+          return {
+            ...list,
+            items: items || [],
+          };
+        })
+      );
+
+      setArchivedLists(listsWithItems);
     } catch (error) {
       console.error("Error fetching archived lists:", error);
       
@@ -67,12 +89,8 @@ export const ArchivedLists = () => {
     }
   };
 
-  const handleRestore = async (listId: string) => {
+  const handleRestoreList = async (listId: string) => {
     try {
-      if (!user) {
-        throw new Error("No authenticated user found");
-      }
-
       const { error } = await supabase
         .from("shopping_lists")
         .update({
@@ -80,27 +98,61 @@ export const ArchivedLists = () => {
           archived_at: null,
         })
         .eq("id", listId)
-        .eq("created_by", user.id);
+        .eq("created_by", user?.id);
 
       if (error) throw error;
+
+      // Also restore all items in the list
+      const { error: itemsError } = await supabase
+        .from("shopping_items")
+        .update({
+          archived: false,
+          archived_at: null,
+        })
+        .eq("list_id", listId);
+
+      if (itemsError) throw itemsError;
 
       toast({
         title: "רשימה שוחזרה",
         description: "הרשימה שוחזרה בהצלחה",
       });
 
-      // Refresh the archived lists
       fetchArchivedLists();
-      
-      // Redirect to the main page to show the restored list
       navigate("/");
-      // Force a reload to refresh the current lists
-      window.location.reload();
     } catch (error) {
       console.error("Error restoring list:", error);
       toast({
         title: "שגיאה",
         description: "לא ניתן היה לשחזר את הרשימה",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRestoreItem = async (item: ShoppingItem) => {
+    try {
+      const { error } = await supabase
+        .from("shopping_items")
+        .update({
+          archived: false,
+          archived_at: null,
+        })
+        .eq("id", item.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "פריט שוחזר",
+        description: `${item.name} שוחזר בהצלחה`,
+      });
+
+      fetchArchivedLists();
+    } catch (error) {
+      console.error("Error restoring item:", error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן היה לשחזר את הפריט",
         variant: "destructive",
       });
     }
@@ -140,30 +192,62 @@ export const ArchivedLists = () => {
   return (
     <div className="space-y-4 p-4 md:p-0">
       <h2 className="text-xl font-semibold text-right mb-6">רשימות בארכיון</h2>
-      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+      <Accordion type="multiple" className="space-y-4">
         {archivedLists.map((list) => (
-          <div
-            key={list.id}
-            className="flex flex-col sm:flex-row items-center justify-between p-4 bg-white rounded-lg border gap-4"
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleRestore(list.id)}
-              className="w-full sm:w-auto gap-2"
-            >
-              <ArchiveRestore size={16} />
-              שחזר
-            </Button>
-            <div className="text-center sm:text-right">
-              <div className="font-medium">{list.name}</div>
-              <div className="text-sm text-muted-foreground">
-                {format(new Date(list.archived_at), "dd/MM/yyyy HH:mm")}
+          <AccordionItem key={list.id} value={list.id} className="border rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRestoreList(list.id);
+                }}
+                className="gap-2"
+              >
+                <ArchiveRestore size={16} />
+                שחזר רשימה
+              </Button>
+              <div className="text-right">
+                <AccordionTrigger className="hover:no-underline">
+                  <div>
+                    <div className="font-medium">{list.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {format(new Date(list.archived_at), "dd/MM/yyyy HH:mm")}
+                    </div>
+                  </div>
+                </AccordionTrigger>
               </div>
             </div>
-          </div>
+            <AccordionContent>
+              <div className="mt-4 space-y-2">
+                {list.items?.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-2 bg-secondary/50 rounded-lg"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRestoreItem(item)}
+                      className="gap-2"
+                    >
+                      <ArchiveRestore size={16} />
+                      שחזר פריט
+                    </Button>
+                    <div className="text-right">
+                      <div className="font-medium">{item.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {item.category} • {item.quantity}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </div>
   );
 };
