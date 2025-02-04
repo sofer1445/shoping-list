@@ -26,7 +26,7 @@ export const useShoppingList = () => {
     if (!user) return;
 
     try {
-      const { data: existingList, error: fetchError } = await supabase
+      const { data: existingList, error: fetchError, status } = await supabase
         .from("shopping_lists")
         .select("id")
         .eq("created_by", user.id)
@@ -35,29 +35,43 @@ export const useShoppingList = () => {
         .maybeSingle();
 
       if (fetchError) {
-        console.error("Error fetching lists:", fetchError);
-        throw fetchError;
-      }
+        if (status === 406) {
+          const { data: listsArray } = await supabase
+            .from("shopping_lists")
+            .select("id")
+            .eq("created_by", user.id)
+            .eq("archived", false)
+            .limit(100); // Adjust the limit as needed
 
-      if (!existingList) {
-        const { data: newList, error: createError } = await supabase
-          .from("shopping_lists")
-          .insert({
-            name: "רשימת קניות",
-            created_by: user.id,
-            archived: false,
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        setCurrentListId(newList.id);
-        toast({
-          title: "רשימה חדשה נוצרה",
-          description: "רשימת קניות חדשה נוצרה בהצלחה",
-        });
+          if (listsArray.length > 0) {
+            setCurrentListId(listsArray[0].id);
+          } else {
+            throw fetchError;
+          }
+        } else {
+          throw fetchError;
+        }
       } else {
-        setCurrentListId(existingList.id);
+        if (!existingList) {
+          const { data: newList, error: createError } = await supabase
+            .from("shopping_lists")
+            .insert({
+              name: "רשימת קניות",
+              created_by: user.id,
+              archived: false,
+            })
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          setCurrentListId(newList.id);
+          toast({
+            title: "רשימה חדשה נוצרה",
+            description: "רשימת קניות חדשה נוצרה בהצלחה",
+          });
+        } else {
+          setCurrentListId(existingList.id);
+        }
       }
     } catch (error: any) {
       console.error("Error creating/fetching list:", error);
