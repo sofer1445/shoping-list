@@ -1,15 +1,11 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Trash2, Edit, Check, GripVertical, MoreVertical } from "lucide-react";
+import { Trash2, Edit, Check, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShoppingItem } from "./types";
 import { ProductImage } from "./ProductImage";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface SortableItemProps {
   item: ShoppingItem;
@@ -50,24 +46,28 @@ export const SortableItem = ({
       )}
     >
       <div className="flex gap-2 items-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="p-2 hover:bg-secondary rounded-full transition-colors">
-              <MoreVertical size={20} className="text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem onClick={() => onDelete(item.id)} className="text-destructive">
-              <Trash2 size={16} className="mr-2" />
-              מחק פריט
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(item.id)}>
-              <Edit size={16} className="mr-2" />
-              ערוך פריט
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <div {...listeners} className="cursor-grab active:cursor-grabbing hover:bg-secondary p-2 rounded-full transition-colors">
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors"
+            onClick={() => onDelete(item.id)}
+          >
+            <Trash2 size={18} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors"
+            onClick={() => onEdit(item.id)}
+          >
+            <Edit size={18} />
+          </Button>
+        </div>
+        <div 
+          {...listeners} 
+          className="cursor-grab active:cursor-grabbing hover:bg-secondary p-2 rounded-full transition-colors"
+        >
           <GripVertical size={20} className="text-muted-foreground" />
         </div>
       </div>
