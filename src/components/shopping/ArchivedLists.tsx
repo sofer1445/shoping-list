@@ -45,31 +45,45 @@ export const ArchivedLists = () => {
         throw new Error("No authenticated user found");
       }
 
-      const { data: lists, error: listsError } = await supabase
+      const { data: lists, error: listsError, status } = await supabase
         .from("shopping_lists")
         .select("id, name, archived_at")
         .eq("archived", true)
         .eq("created_by", user.id)
         .order("archived_at", { ascending: false });
 
-      if (listsError) throw listsError;
+      if (listsError) {
+        if (status === 406) {
+          const { data: listsArray } = await supabase
+            .from("shopping_lists")
+            .select("id, name, archived_at")
+            .eq("archived", true)
+            .eq("created_by", user.id)
+            .order("archived_at", { ascending: false })
+            .limit(100); // Adjust the limit as needed
 
-      const listsWithItems = await Promise.all(
-        (lists || []).map(async (list) => {
-          const { data: items } = await supabase
-            .from("shopping_items")
-            .select("*")
-            .eq("list_id", list.id)
-            .order("created_at", { ascending: true });
+          setArchivedLists(listsArray);
+        } else {
+          throw listsError;
+        }
+      } else {
+        const listsWithItems = await Promise.all(
+          (lists || []).map(async (list) => {
+            const { data: items } = await supabase
+              .from("shopping_items")
+              .select("*")
+              .eq("list_id", list.id)
+              .order("created_at", { ascending: true });
 
-          return {
-            ...list,
-            items: items || [],
-          };
-        })
-      );
+            return {
+              ...list,
+              items: items || [],
+            };
+          })
+        );
 
-      setArchivedLists(listsWithItems);
+        setArchivedLists(listsWithItems);
+      }
     } catch (error) {
       console.error("Error fetching archived lists:", error);
       

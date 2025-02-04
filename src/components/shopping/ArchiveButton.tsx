@@ -13,7 +13,7 @@ export const ArchiveButton = ({ listId, onArchive }: ArchiveButtonProps) => {
 
   const handleArchive = async () => {
     try {
-      const { error } = await supabase
+      const { error, status } = await supabase
         .from("shopping_lists")
         .update({
           archived: true,
@@ -21,14 +21,28 @@ export const ArchiveButton = ({ listId, onArchive }: ArchiveButtonProps) => {
         })
         .eq("id", listId);
 
-      if (error) throw error;
+      if (error) {
+        if (status === 406) {
+          const { data: listsArray } = await supabase
+            .from("shopping_lists")
+            .select("id, name, archived_at")
+            .eq("archived", true)
+            .eq("created_by", user.id)
+            .order("archived_at", { ascending: false })
+            .limit(100); // Adjust the limit as needed
 
-      toast({
-        title: "רשימה הועברה לארכיון",
-        description: "הרשימה נשמרה בהצלחה בארכיון",
-      });
+          setArchivedLists(listsArray);
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: "רשימה הועברה לארכיון",
+          description: "הרשימה נשמרה בהצלחה בארכיון",
+        });
 
-      onArchive();
+        onArchive();
+      }
     } catch (error) {
       console.error("Error archiving list:", error);
       toast({
