@@ -27,12 +27,16 @@ export const useShoppingItems = (
 
       if (error) throw error;
 
-      setItems((prev) => [...prev, { ...data, isNew: true }]);
+      // Add isNew property locally after getting the response from the database
+      const itemWithNewFlag = { ...data, isNew: true };
+      setItems((prev) => [...prev, itemWithNewFlag]);
+
       toast({
         title: "פריט נוסף",
         description: `${newItem.name} נוסף לרשימה`,
       });
 
+      // Remove the isNew flag after 3 seconds
       setTimeout(() => {
         setItems((prevItems) =>
           prevItems.map((i) =>
@@ -116,9 +120,12 @@ export const useShoppingItems = (
 
   const handleSaveEdit = async (updatedItem: ShoppingItem) => {
     try {
+      // Remove isNew and justCompleted from the data being sent to the database
+      const { isNew, justCompleted, ...itemForDb } = updatedItem;
+      
       const { error } = await supabase
         .from("shopping_items")
-        .update(updatedItem)
+        .update(itemForDb)
         .eq("id", updatedItem.id);
 
       if (error) throw error;
