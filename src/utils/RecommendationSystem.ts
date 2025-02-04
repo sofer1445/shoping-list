@@ -2,10 +2,21 @@ interface RecommendationData {
   [key: string]: string[];
 }
 
+interface UserPurchaseData {
+  [key: string]: {
+    [key: string]: {
+      count: number;
+      lastPurchased: number;
+    };
+  };
+}
+
 export class RecommendationSystem {
   private static readonly STORAGE_KEY = 'shopping_recommendations';
   private static readonly MAX_SUGGESTIONS = 3;
   private static readonly USAGE_THRESHOLD = 2;
+  private static readonly DECAY_FACTOR = 0.8; // Weight for older purchases
+  private static readonly MAX_AGE_DAYS = 30; // Maximum age for recommendations
 
   private static readonly staticRecommendations: RecommendationData = {
     'דגני בוקר': ['חלב', 'קערות חד פעמיות'],
@@ -17,80 +28,97 @@ export class RecommendationSystem {
     'עגבניות': ['מלפפונים', 'בצל', 'שמן זית']
   };
 
-  private userRecommendations: Map<string, Map<string, number>>;
+  private userRecommendations: UserPurchaseData;
 
   constructor() {
     this.userRecommendations = this.loadUserRecommendations();
   }
 
-  private loadUserRecommendations(): Map<string, Map<string, number>> {
+  private loadUserRecommendations(): UserPurchaseData {
     const stored = localStorage.getItem(RecommendationSystem.STORAGE_KEY);
-    if (!stored) return new Map();
-
-    const data = JSON.parse(stored);
-    const recommendations = new Map();
-    
-    Object.entries(data).forEach(([key, value]) => {
-      recommendations.set(key, new Map(Object.entries(value as object)));
-    });
-
-    return recommendations;
+    return stored ? JSON.parse(stored) : {};
   }
 
   private saveUserRecommendations(): void {
-    const data: { [key: string]: { [key: string]: number } } = {};
-    
-    this.userRecommendations.forEach((itemMap, key) => {
-      data[key] = Object.fromEntries(itemMap);
-    });
+    localStorage.setItem(
+      RecommendationSystem.STORAGE_KEY,
+      JSON.stringify(this.userRecommendations)
+    );
+  }
 
-    localStorage.setItem(RecommendationSystem.STORAGE_KEY, JSON.stringify(data));
+  private calculateScore(count: number, lastPurchased: number): number {
+    const daysSinceLastPurchase = (Date.now() - lastPurchased) / (1000 * 60 * 60 * 24);
+    const ageDecay = Math.pow(RecommendationSystem.DECAY_FACTOR, daysSinceLastPurchase);
+    return count * ageDecay;
   }
 
   public addPurchaseData(items: string[]): void {
+    const timestamp = Date.now();
+
     items.forEach((item, i) => {
+      if (!this.userRecommendations[item]) {
+        this.userRecommendations[item] = {};
+      }
+
       items.slice(i + 1).forEach(otherItem => {
-        if (!this.userRecommendations.has(item)) {
-          this.userRecommendations.set(item, new Map());
+        if (!this.userRecommendations[item][otherItem]) {
+          this.userRecommendations[item][otherItem] = {
+            count: 0,
+            lastPurchased: timestamp
+          };
         }
-        const itemMap = this.userRecommendations.get(item)!;
-        itemMap.set(otherItem, (itemMap.get(otherItem) || 0) + 1);
+
+        this.userRecommendations[item][otherItem].count++;
+        this.userRecommendations[item][otherItem].lastPurchased = timestamp;
       });
     });
+
     this.saveUserRecommendations();
+    this.cleanupOldData();
   }
 
   public getRecommendations(item: string): string[] {
-    const recommendations = new Set<string>();
+    const recommendations = new Map<string, number>();
     
-    // Add static recommendations
+    // Add static recommendations with base score
     const staticRecs = RecommendationSystem.staticRecommendations[item] || [];
-    staticRecs.forEach(rec => recommendations.add(rec));
+    staticRecs.forEach(rec => recommendations.set(rec, 1));
 
-    // Add user recommendations
-    const userRecs = this.userRecommendations.get(item);
+    // Add user recommendations with calculated scores
+    const userRecs = this.userRecommendations[item];
     if (userRecs) {
-      Array.from(userRecs.entries())
-        .filter(([_, count]) => count >= RecommendationSystem.USAGE_THRESHOLD)
-        .sort((a, b) => b[1] - a[1])
-        .forEach(([rec]) => recommendations.add(rec));
+      Object.entries(userRecs).forEach(([rec, data]) => {
+        const score = this.calculateScore(data.count, data.lastPurchased);
+        if (score >= RecommendationSystem.USAGE_THRESHOLD) {
+          recommendations.set(rec, score);
+        }
+      });
     }
 
-    return Array.from(recommendations).slice(0, RecommendationSystem.MAX_SUGGESTIONS);
+    // Sort by score and return top recommendations
+    return Array.from(recommendations.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, RecommendationSystem.MAX_SUGGESTIONS)
+      .map(([rec]) => rec);
   }
 
   public cleanupOldData(): void {
-    // Remove items with low usage counts
-    this.userRecommendations.forEach((itemMap, key) => {
-      itemMap.forEach((count, recItem) => {
-        if (count < RecommendationSystem.USAGE_THRESHOLD) {
-          itemMap.delete(recItem);
+    const now = Date.now();
+    const maxAge = RecommendationSystem.MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+
+    Object.keys(this.userRecommendations).forEach(item => {
+      Object.entries(this.userRecommendations[item]).forEach(([rec, data]) => {
+        if (now - data.lastPurchased > maxAge || 
+            this.calculateScore(data.count, data.lastPurchased) < RecommendationSystem.USAGE_THRESHOLD) {
+          delete this.userRecommendations[item][rec];
         }
       });
-      if (itemMap.size === 0) {
-        this.userRecommendations.delete(key);
+
+      if (Object.keys(this.userRecommendations[item]).length === 0) {
+        delete this.userRecommendations[item];
       }
     });
+
     this.saveUserRecommendations();
   }
 }
