@@ -15,3 +15,5 @@ export const supabase = createClient<Database>(
     }
   }
 );
+
+supabase.rpc('enable_rls', { table_name: 'public.shopping_lists' });
