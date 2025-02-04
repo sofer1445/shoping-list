@@ -26,39 +26,42 @@ export const useShoppingList = () => {
     if (!user) return;
 
     try {
-      const { data: existingList, error: fetchError } = await supabase
+      // First try to find an existing non-archived list
+      const { data: existingLists, error: fetchError } = await supabase
         .from("shopping_lists")
         .select("id")
         .eq("created_by", user.id)
         .eq("archived", false)
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
 
       if (fetchError) {
         console.error("Error fetching lists:", fetchError);
         throw fetchError;
       }
 
-      if (!existingList) {
-        const { data: newList, error: createError } = await supabase
-          .from("shopping_lists")
-          .insert({
-            name: "רשימת קניות",
-            created_by: user.id,
-            archived: false,
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        setCurrentListId(newList.id);
-        toast({
-          title: "רשימה חדשה נוצרה",
-          description: "רשימת קניות חדשה נוצרה בהצלחה",
-        });
-      } else {
-        setCurrentListId(existingList.id);
+      // If we found an existing list, use it
+      if (existingLists && existingLists.length > 0) {
+        setCurrentListId(existingLists[0].id);
+        return;
       }
+
+      // If no existing list was found, create a new one
+      const { data: newList, error: createError } = await supabase
+        .from("shopping_lists")
+        .insert({
+          name: "רשימת קניות",
+          created_by: user.id,
+          archived: false,
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      setCurrentListId(newList.id);
+      toast({
+        title: "רשימה חדשה נוצרה",
+        description: "רשימת קניות חדשה נוצרה בהצלחה",
+      });
     } catch (error: any) {
       console.error("Error creating/fetching list:", error);
       toast({

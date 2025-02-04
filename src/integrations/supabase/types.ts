@@ -20,7 +20,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by?: string
+          created_by: string
           id?: string
           list_id?: string | null
           permission?: Database["public"]["Enums"]["share_permission"]
@@ -180,12 +180,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-        RLS: {
-          enable_delete_for_owners: string
-          enable_insert_for_users: string
-          enable_select_for_users: string
-          enable_update_for_owners: string
-        }
       }
     }
     Views: {

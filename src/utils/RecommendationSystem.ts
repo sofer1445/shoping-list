@@ -15,8 +15,8 @@ export class RecommendationSystem {
   private static readonly STORAGE_KEY = 'shopping_recommendations';
   private static readonly MAX_SUGGESTIONS = 3;
   private static readonly USAGE_THRESHOLD = 2;
-  private static readonly DECAY_FACTOR = 0.8; // Weight for older purchases
-  private static readonly MAX_AGE_DAYS = 30; // Maximum age for recommendations
+  private static readonly DECAY_FACTOR = 0.8;
+  private static readonly MAX_AGE_DAYS = 30;
 
   private static readonly staticRecommendations: RecommendationData = {
     'דגני בוקר': ['חלב', 'קערות חד פעמיות'],
@@ -35,15 +35,24 @@ export class RecommendationSystem {
   }
 
   private loadUserRecommendations(): UserPurchaseData {
-    const stored = localStorage.getItem(RecommendationSystem.STORAGE_KEY);
-    return stored ? JSON.parse(stored) : {};
+    try {
+      const stored = localStorage.getItem(RecommendationSystem.STORAGE_KEY);
+      return stored ? JSON.parse(stored) : {};
+    } catch (error) {
+      console.error('Error loading recommendations:', error);
+      return {};
+    }
   }
 
   private saveUserRecommendations(): void {
-    localStorage.setItem(
-      RecommendationSystem.STORAGE_KEY,
-      JSON.stringify(this.userRecommendations)
-    );
+    try {
+      localStorage.setItem(
+        RecommendationSystem.STORAGE_KEY,
+        JSON.stringify(this.userRecommendations)
+      );
+    } catch (error) {
+      console.error('Error saving recommendations:', error);
+    }
   }
 
   private calculateScore(count: number, lastPurchased: number): number {
