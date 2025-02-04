@@ -92,6 +92,12 @@ export const useShoppingList = () => {
     }
   };
 
+  const refreshList = () => {
+    if (currentListId) {
+      fetchItems();
+    }
+  };
+
   return {
     items,
     setItems,
@@ -99,5 +105,6 @@ export const useShoppingList = () => {
     setCurrentListId,
     createInitialList,
     fetchItems,
+    refreshList,
   };
 };
