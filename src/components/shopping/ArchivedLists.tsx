@@ -36,14 +36,12 @@ export const ArchivedLists = () => {
     }
   }, [user]);
 
-  const fetchArchivedLists = async (retryCount = 0) => {
+  const fetchArchivedLists = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      if (!user) {
-        throw new Error("No authenticated user found");
-      }
+      if (!user) throw new Error("No authenticated user found");
 
       const { data: lists, error: listsError } = await supabase
         .from("shopping_lists")
@@ -72,18 +70,12 @@ export const ArchivedLists = () => {
       setArchivedLists(listsWithItems);
     } catch (error) {
       console.error("Error fetching archived lists:", error);
-      
-      if (retryCount < 3) {
-        const delay = Math.pow(2, retryCount) * 1000;
-        setTimeout(() => fetchArchivedLists(retryCount + 1), delay);
-      } else {
-        setError("לא ניתן היה לטעון את הרשימות המאורכבות. אנא נסה שוב מאוחר יותר.");
-        toast({
-          title: "שגיאה",
-          description: "לא ניתן היה לטעון את הרשימות המאורכבות",
-          variant: "destructive",
-        });
-      }
+      setError("לא ניתן היה לטעון את הרשימות המאורכבות. אנא נסה שוב מאוחר יותר.");
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן היה לטעון את הרשימות המאורכבות",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -132,12 +124,16 @@ export const ArchivedLists = () => {
 
   const handleRestoreItem = async (item: ShoppingItem) => {
     try {
-      const { data: currentList } = await supabase
+      const { data: currentList, error: listError } = await supabase
         .from("shopping_lists")
-        .select("id")
+        .select("*")
         .eq("created_by", user?.id)
         .eq("archived", false)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single();
+
+      if (listError) throw listError;
 
       if (!currentList) {
         toast({
@@ -148,7 +144,6 @@ export const ArchivedLists = () => {
         return;
       }
 
-      // Create a new item in the current list
       const { error: createError } = await supabase
         .from("shopping_items")
         .insert({
@@ -166,10 +161,7 @@ export const ArchivedLists = () => {
         description: `${item.name} הועבר לרשימה הנוכחית`,
       });
 
-      // Force a refresh of the current list
       window.dispatchEvent(new CustomEvent('shopping-list-updated'));
-      
-      // Update selected items state
       setSelectedItems(prev => ({ ...prev, [item.id]: false }));
     } catch (error) {
       console.error("Error restoring item:", error);
