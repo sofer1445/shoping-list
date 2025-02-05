@@ -29,16 +29,17 @@ export const useShoppingList = () => {
       // First try to find existing non-archived lists
       const { data: existingLists, error: fetchError } = await supabase
         .from("shopping_lists")
-        .select("id")
+        .select("*")
         .eq("created_by", user.id)
-        .eq("archived", false);
+        .eq("archived", false)
+        .order('created_at', { ascending: false });
 
       if (fetchError) {
         console.error("Error fetching lists:", fetchError);
         throw fetchError;
       }
 
-      // If we found existing lists, use the first one
+      // If we found existing lists, use the most recent one
       if (existingLists && existingLists.length > 0) {
         setCurrentListId(existingLists[0].id);
         return;
