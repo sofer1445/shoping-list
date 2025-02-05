@@ -26,22 +26,21 @@ export const useShoppingList = () => {
     if (!user) return;
 
     try {
-      // First try to find an existing non-archived list
-      const { data: existingList, error: fetchError } = await supabase
+      // First try to find existing non-archived lists
+      const { data: existingLists, error: fetchError } = await supabase
         .from("shopping_lists")
         .select("id")
         .eq("created_by", user.id)
-        .eq("archived", false)
-        .maybeSingle();
+        .eq("archived", false);
 
       if (fetchError) {
         console.error("Error fetching lists:", fetchError);
         throw fetchError;
       }
 
-      // If we found an existing list, use it
-      if (existingList) {
-        setCurrentListId(existingList.id);
+      // If we found existing lists, use the first one
+      if (existingLists && existingLists.length > 0) {
+        setCurrentListId(existingLists[0].id);
         return;
       }
 
