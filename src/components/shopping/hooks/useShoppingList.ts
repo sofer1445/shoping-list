@@ -31,9 +31,13 @@ export const useShoppingList = () => {
         .select("*")
         .eq("created_by", user.id)
         .eq("archived", false)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("Error fetching lists:", fetchError);
+        throw fetchError;
+      }
 
       if (existingLists && existingLists.length > 0) {
         setCurrentListId(existingLists[0].id);
@@ -50,7 +54,10 @@ export const useShoppingList = () => {
         .select()
         .single();
 
-      if (createError) throw createError;
+      if (createError) {
+        console.error("Error creating list:", createError);
+        throw createError;
+      }
       
       setCurrentListId(newList.id);
       toast({
