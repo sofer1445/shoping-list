@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
@@ -26,7 +25,10 @@ export const useShoppingList = () => {
   }, [currentListId]);
 
   const createInitialList = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log("No user found, skipping list creation");
+      return;
+    }
 
     try {
       const { data: existingLists, error: fetchError } = await supabase
@@ -39,14 +41,21 @@ export const useShoppingList = () => {
 
       if (fetchError) {
         console.error("Error fetching lists:", fetchError);
-        throw fetchError;
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן היה לטעון את הרשימות",
+          variant: "destructive",
+        });
+        return;
       }
 
       if (existingLists && existingLists.length > 0) {
+        console.log("Found existing list:", existingLists[0].id);
         setCurrentListId(existingLists[0].id);
         return;
       }
 
+      console.log("No existing lists found, creating new one");
       const { data: newList, error: createError } = await supabase
         .from("shopping_lists")
         .insert({
@@ -59,9 +68,20 @@ export const useShoppingList = () => {
 
       if (createError) {
         console.error("Error creating list:", createError);
-        throw createError;
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן היה ליצור רשימה חדשה",
+          variant: "destructive",
+        });
+        return;
       }
       
+      if (!newList) {
+        console.error("No list created");
+        return;
+      }
+
+      console.log("Created new list:", newList.id);
       setCurrentListId(newList.id);
       await logActivity('list_created', { list_id: newList.id });
       
@@ -80,7 +100,10 @@ export const useShoppingList = () => {
   };
 
   const fetchItems = async () => {
-    if (!currentListId) return;
+    if (!currentListId) {
+      console.log("No current list ID, skipping item fetch");
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -90,7 +113,12 @@ export const useShoppingList = () => {
         .eq("archived", false)
         .order("created_at", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching items:", error);
+        throw error;
+      }
+
+      console.log("Fetched items for list:", currentListId, data?.length || 0, "items");
       setItems(data || []);
     } catch (error) {
       console.error("Error fetching items:", error);
