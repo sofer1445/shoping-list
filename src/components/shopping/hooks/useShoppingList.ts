@@ -9,6 +9,7 @@ export const useShoppingList = () => {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [currentListId, setCurrentListId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasAttemptedInitialFetch, setHasAttemptedInitialFetch] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { logActivity } = useActivityLog();
@@ -46,58 +47,45 @@ export const useShoppingList = () => {
   }, [currentListId, toast]);
 
   const createInitialList = useCallback(async () => {
-    if (!user) {
-      console.log("No user found, skipping list creation");
+    if (!user || hasAttemptedInitialFetch) {
       return;
     }
 
     setIsLoading(true);
+    setHasAttemptedInitialFetch(true);
+
     try {
-      console.log("Checking for existing lists...");
-      const { data: existingLists, error: fetchError } = await supabase
+      // First try to find an existing list
+      const { data: existingList, error: fetchError } = await supabase
         .from("shopping_lists")
         .select("id")
         .eq("created_by", user.id)
         .eq("archived", false)
-        .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error("Error fetching lists:", fetchError);
-        toast({
-          title: "שגיאה",
-          description: "לא ניתן היה לטעון את הרשימות",
-          variant: "destructive",
-        });
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (existingList) {
+        console.log("Found existing list:", existingList.id);
+        setCurrentListId(existingList.id);
         return;
       }
 
-      if (existingLists) {
-        console.log("Found existing list:", existingLists.id);
-        setCurrentListId(existingLists.id);
-        return;
-      }
-
-      console.log("Creating new list...");
+      // If no existing list, create a new one
       const { data: newList, error: createError } = await supabase
         .from("shopping_lists")
         .insert({
           name: "רשימת קניות",
           created_by: user.id,
-          archived: false,
         })
         .select()
         .single();
 
       if (createError) {
-        console.error("Error creating list:", createError);
-        toast({
-          title: "שגיאה",
-          description: "לא ניתן היה ליצור רשימה חדשה",
-          variant: "destructive",
-        });
-        return;
+        throw createError;
       }
 
       if (newList) {
@@ -119,7 +107,7 @@ export const useShoppingList = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast, logActivity]);
+  }, [user, toast, logActivity, hasAttemptedInitialFetch]);
 
   useEffect(() => {
     if (user && !currentListId && !isLoading) {
