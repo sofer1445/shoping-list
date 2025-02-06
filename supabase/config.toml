@@ -1,1 +1,6 @@
 project_id = "lpyxnwcxfpqiinncqswe"
+
+[policies]
+  [policies.shopping_lists]
+    check = "NEW.archived IS NOT TRUE"
+    using = "auth.uid() = created_by"
