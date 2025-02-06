@@ -181,14 +181,77 @@ export type Database = {
           },
         ]
       }
+      user_activity_log: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          details: Json | null
+          id: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          details?: Json | null
+          id?: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: Database["public"]["Enums"]["activity_type"]
+          details?: Json | null
+          id?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      user_daily_activity: {
+        Row: {
+          activity_count: number | null
+          activity_type: Database["public"]["Enums"]["activity_type"] | null
+          day: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      log_user_activity: {
+        Args: {
+          _activity_type: Database["public"]["Enums"]["activity_type"]
+          _details?: Json
+        }
+        Returns: undefined
+      }
     }
     Enums: {
+      activity_type:
+        | "login"
+        | "logout"
+        | "list_created"
+        | "list_archived"
+        | "item_added"
+        | "item_completed"
+        | "item_deleted"
+        | "list_shared"
       share_permission: "view" | "edit"
     }
     CompositeTypes: {

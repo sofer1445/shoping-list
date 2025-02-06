@@ -1,14 +1,17 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 import { ShoppingItem } from "../types";
+import { useActivityLog } from "@/hooks/useActivityLog";
 
 export const useShoppingList = () => {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [currentListId, setCurrentListId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { logActivity } = useActivityLog();
 
   useEffect(() => {
     if (user && !currentListId) {
@@ -60,6 +63,8 @@ export const useShoppingList = () => {
       }
       
       setCurrentListId(newList.id);
+      await logActivity('list_created', { list_id: newList.id });
+      
       toast({
         title: "רשימה חדשה נוצרה",
         description: "רשימת קניות חדשה נוצרה בהצלחה",

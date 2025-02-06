@@ -1,12 +1,15 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { ShoppingItem } from "../types";
+import { useActivityLog } from "@/hooks/useActivityLog";
 
 export const useItemModification = (
   items: ShoppingItem[],
   setItems: React.Dispatch<React.SetStateAction<ShoppingItem[]>>
 ) => {
   const { toast } = useToast();
+  const { logActivity } = useActivityLog();
 
   const deleteItem = async (id: string) => {
     try {
@@ -21,6 +24,11 @@ export const useItemModification = (
       setItems((prev) => prev.filter((i) => i.id !== id));
 
       if (item) {
+        await logActivity('item_deleted', { 
+          item_id: id,
+          item_name: item.name 
+        });
+        
         toast({
           title: "פריט נמחק",
           description: `${item.name} הוסר מהרשימה`,

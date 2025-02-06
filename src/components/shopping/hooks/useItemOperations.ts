@@ -1,7 +1,9 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { ShoppingItem } from "../types";
 import { useAuth } from "@/components/AuthProvider";
+import { useActivityLog } from "@/hooks/useActivityLog";
 
 export const useItemOperations = (
   setItems: React.Dispatch<React.SetStateAction<ShoppingItem[]>>,
@@ -9,6 +11,7 @@ export const useItemOperations = (
 ) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { logActivity } = useActivityLog();
 
   const addItem = async (newItem: Omit<ShoppingItem, "id" | "completed" | "isNew">) => {
     if (!currentListId || !user) return;
@@ -28,6 +31,12 @@ export const useItemOperations = (
 
       const itemWithNewFlag = { ...data, isNew: true };
       setItems((prev) => [...prev, itemWithNewFlag]);
+
+      await logActivity('item_added', { 
+        item_id: data.id,
+        list_id: currentListId,
+        item_name: newItem.name 
+      });
 
       toast({
         title: "פריט נוסף",
