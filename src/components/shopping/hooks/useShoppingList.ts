@@ -1,14 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ShoppingItem } from "../types";
 import { useActivityLog } from "@/hooks/useActivityLog";
+import { saveToLocalStorage, getFromLocalStorage } from "@/utils/localStorageUtils";
 
 export const useShoppingList = () => {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [currentListId, setCurrentListId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [hasAttemptedInitialFetch, setHasAttemptedInitialFetch] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -30,19 +33,28 @@ export const useShoppingList = () => {
         .order("created_at", { ascending: true });
 
       if (error) {
-        console.error("Error fetching items:", error);
         throw error;
       }
 
       console.log("Fetched items:", data?.length || 0, "items");
       setItems(data || []);
+      saveToLocalStorage(data || []); // Backup to local storage
+      setHasError(false);
+      setIsOfflineMode(false);
     } catch (error: any) {
       console.error("Error fetching items:", error);
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן היה לטעון את הפריטים",
-        variant: "destructive",
-      });
+      const localItems = getFromLocalStorage();
+      if (localItems.length > 0) {
+        setItems(localItems);
+        setIsOfflineMode(true);
+        toast({
+          title: "מצב לא מקוון",
+          description: "משתמש בנתונים מקומיים שנשמרו",
+          variant: "warning",
+        });
+      } else {
+        setHasError(true);
+      }
     }
   }, [currentListId, toast]);
 
@@ -55,7 +67,6 @@ export const useShoppingList = () => {
     setHasAttemptedInitialFetch(true);
 
     try {
-      // First try to find an existing list
       const { data: existingList, error: fetchError } = await supabase
         .from("shopping_lists")
         .select("id")
@@ -74,7 +85,6 @@ export const useShoppingList = () => {
         return;
       }
 
-      // If no existing list, create a new one
       const { data: newList, error: createError } = await supabase
         .from("shopping_lists")
         .insert({
@@ -99,11 +109,13 @@ export const useShoppingList = () => {
       }
     } catch (error: any) {
       console.error("Error in createInitialList:", error);
+      setHasError(true);
       toast({
         title: "שגיאה",
-        description: "אירעה שגיאה בעת יצירת הרשימה",
+        description: "אירעה שגיאה בעת יצירת הרשימה. משתמש במצב לא מקוון.",
         variant: "destructive",
       });
+      setIsOfflineMode(true);
     } finally {
       setIsLoading(false);
     }
@@ -129,5 +141,7 @@ export const useShoppingList = () => {
     createInitialList,
     fetchItems,
     isLoading,
+    hasError,
+    isOfflineMode,
   };
 };

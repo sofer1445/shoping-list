@@ -15,6 +15,8 @@ import { useShoppingList } from "./shopping/hooks/useShoppingList";
 import { useShoppingItems } from "./shopping/hooks/useShoppingItems";
 import { ShoppingItem } from "./shopping/types";
 import { useSearchParams } from "react-router-dom";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { AlertCircle, CloudOff } from "lucide-react";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
@@ -30,7 +32,10 @@ export const ShoppingList = () => {
     setItems,
     currentListId,
     setCurrentListId,
-    fetchItems
+    fetchItems,
+    isLoading,
+    hasError,
+    isOfflineMode
   } = useShoppingList();
 
   const {
@@ -96,6 +101,16 @@ export const ShoppingList = () => {
 
   const renderShoppingList = (isSharedList: boolean = false) => (
     <>
+      {isOfflineMode && (
+        <Alert className="mb-4">
+          <CloudOff className="h-4 w-4" />
+          <AlertTitle>מצב לא מקוון</AlertTitle>
+          <AlertDescription>
+            הנתונים מוצגים ממקור מקומי. חלק מהפעולות עלולות לא לעבוד.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-2">
           {!isSharedList && (
@@ -160,6 +175,28 @@ export const ShoppingList = () => {
       />
     </>
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="max-w-md mx-auto p-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>שגיאה</AlertTitle>
+          <AlertDescription>
+            לא ניתן לטעון את רשימת הקניות. אנא נסה שוב מאוחר יותר.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto p-4 min-h-screen bg-white">
