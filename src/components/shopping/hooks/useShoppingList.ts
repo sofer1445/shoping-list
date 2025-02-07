@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingItem } from "../types";
-import { useActivityLog } from "@/hooks/useActivityLog";
-import { saveToLocalStorage, getFromLocalStorage } from "@/utils/localStorageUtils";
+import { useListOperations } from "./useListOperations";
+import { useOfflineStorage } from "./useOfflineStorage";
 
 export const useShoppingList = () => {
   const [items, setItems] = useState<ShoppingItem[]>([]);
@@ -13,9 +13,11 @@ export const useShoppingList = () => {
   const [hasError, setHasError] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [hasAttemptedInitialFetch, setHasAttemptedInitialFetch] = useState(false);
+  
   const { toast } = useToast();
   const { user } = useAuth();
-  const { logActivity } = useActivityLog();
+  const { createNewList, fetchExistingList } = useListOperations(user);
+  const { saveItemsToLocalStorage, handleOfflineMode } = useOfflineStorage();
 
   const fetchItems = useCallback(async () => {
     if (!currentListId) {
@@ -32,94 +34,52 @@ export const useShoppingList = () => {
         .eq("archived", false)
         .order("created_at", { ascending: true });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       console.log("Fetched items:", data?.length || 0, "items");
       setItems(data || []);
-      saveToLocalStorage(data || []); // Backup to local storage
+      saveItemsToLocalStorage(data || []);
       setHasError(false);
       setIsOfflineMode(false);
     } catch (error: any) {
       console.error("Error fetching items:", error);
-      const localItems = getFromLocalStorage();
-      if (localItems.length > 0) {
-        setItems(localItems);
-        setIsOfflineMode(true);
-        toast({
-          title: "מצב לא מקוון",
-          description: "משתמש בנתונים מקומיים שנשמרו",
-          variant: "default", // Changed from "warning" to "default"
-        });
-      } else {
+      const offlineItems = handleOfflineMode();
+      setItems(offlineItems);
+      setIsOfflineMode(true);
+      if (offlineItems.length === 0) {
         setHasError(true);
       }
     }
   }, [currentListId, toast]);
 
   const createInitialList = useCallback(async () => {
-    if (!user || hasAttemptedInitialFetch) {
-      return;
-    }
+    if (!user || hasAttemptedInitialFetch) return;
 
     setIsLoading(true);
     setHasAttemptedInitialFetch(true);
 
     try {
-      const { data: existingList, error: fetchError } = await supabase
-        .from("shopping_lists")
-        .select("id")
-        .eq("created_by", user.id)
-        .eq("archived", false)
-        .limit(1)
-        .maybeSingle();
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      if (existingList) {
-        console.log("Found existing list:", existingList.id);
-        setCurrentListId(existingList.id);
+      const existingListId = await fetchExistingList();
+      
+      if (existingListId) {
+        console.log("Found existing list:", existingListId);
+        setCurrentListId(existingListId);
         return;
       }
 
-      const { data: newList, error: createError } = await supabase
-        .from("shopping_lists")
-        .insert({
-          name: "רשימת קניות",
-          created_by: user.id,
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        throw createError;
+      const newListId = await createNewList();
+      if (newListId) {
+        console.log("Created new list:", newListId);
+        setCurrentListId(newListId);
       }
-
-      if (newList) {
-        console.log("Created new list:", newList.id);
-        setCurrentListId(newList.id);
-        await logActivity('list_created', { list_id: newList.id });
-        toast({
-          title: "רשימה חדשה נוצרה",
-          description: "רשימת קניות חדשה נוצרה בהצלחה",
-        });
-      }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error in createInitialList:", error);
       setHasError(true);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בעת יצירת הרשימה. משתמש במצב לא מקוון.",
-        variant: "destructive",
-      });
       setIsOfflineMode(true);
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast, logActivity, hasAttemptedInitialFetch]);
+  }, [user, hasAttemptedInitialFetch, createNewList, fetchExistingList]);
 
   useEffect(() => {
     if (user && !currentListId && !isLoading) {
