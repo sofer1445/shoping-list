@@ -50,7 +50,7 @@ export const useShoppingList = () => {
         toast({
           title: "מצב לא מקוון",
           description: "משתמש בנתונים מקומיים שנשמרו",
-          variant: "warning",
+          variant: "default", // Changed from "warning" to "default"
         });
       } else {
         setHasError(true);
