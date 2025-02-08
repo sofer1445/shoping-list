@@ -59,20 +59,23 @@ export const SharedLists = () => {
       console.log("Profile found:", profileData);
 
       // כעת נביא את הרשימות המשותפות
+      console.log("Fetching shared lists for user:", user.id);
       const { data, error } = await supabase
-        .from("list_shares")
+        .from("shopping_lists")
         .select(`
-          permission,
-          list:shopping_lists!inner (
-            id,
-            name,
-            created_by
+          id,
+          name,
+          created_by,
+          list_shares!inner (
+            permission,
+            shared_with
           ),
-          creator:profiles!list_shares_created_by_fkey!inner (
+          profiles!shopping_lists_created_by_fkey (
             username
           )
         `)
-        .eq("shared_with", user.id);
+        .eq('list_shares.shared_with', user.id)
+        .eq('archived', false);
 
       if (error) {
         console.error("Error fetching shared lists:", error);
@@ -84,18 +87,19 @@ export const SharedLists = () => {
         return;
       }
 
+      console.log("Raw shared lists data:", data);
+
       if (data) {
-        const formattedLists = data
-          .filter(share => share.list && share.creator) // מסנן רשומות לא תקינות
-          .map((share) => ({
-            id: share.list.id,
-            name: share.list.name,
-            shared_by: {
-              username: share.creator.username || 'משתמש לא ידוע'
-            },
-            permission: share.permission,
-            created_by: share.list.created_by
-          }));
+        const formattedLists = data.map((list) => ({
+          id: list.id,
+          name: list.name,
+          shared_by: {
+            username: list.profiles?.username || 'משתמש לא ידוע'
+          },
+          permission: list.list_shares[0]?.permission || 'view',
+          created_by: list.created_by
+        }));
+        
         console.log("Formatted shared lists:", formattedLists);
         setSharedLists(formattedLists);
       }
