@@ -11,6 +11,7 @@ interface SharedList {
     username: string;
   };
   permission: "view" | "edit";
+  created_by: string;
 }
 
 export const SharedLists = () => {
@@ -29,32 +30,53 @@ export const SharedLists = () => {
   const fetchSharedLists = async () => {
     try {
       setIsLoading(true);
+      
+      // קודם נבדוק אם יש למשתמש פרופיל
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user?.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        return;
+      }
+
+      // כעת נביא את הרשימות המשותפות
       const { data, error } = await supabase
         .from("list_shares")
         .select(`
-          list_id,
           permission,
-          list:shopping_lists!list_shares_list_id_fkey (
+          list:shopping_lists!inner (
             id,
-            name
+            name,
+            created_by
           ),
-          creator:profiles!list_shares_created_by_fkey (
+          creator:profiles!list_shares_created_by_fkey!inner (
             username
           )
         `)
         .eq("shared_with", user?.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching shared lists:", error);
+        throw error;
+      }
 
       if (data) {
-        const formattedLists = data.map((share) => ({
-          id: share.list.id,
-          name: share.list.name,
-          shared_by: {
-            username: share.creator.username
-          },
-          permission: share.permission,
-        }));
+        const formattedLists = data
+          .filter(share => share.list && share.creator) // מסנן רשומות לא תקינות
+          .map((share) => ({
+            id: share.list.id,
+            name: share.list.name,
+            shared_by: {
+              username: share.creator.username || 'משתמש לא ידוע'
+            },
+            permission: share.permission,
+            created_by: share.list.created_by
+          }));
+        console.log("Formatted shared lists:", formattedLists);
         setSharedLists(formattedLists);
       }
     } catch (error) {
