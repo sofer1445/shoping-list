@@ -28,20 +28,35 @@ export const SharedLists = () => {
   }, [user]);
 
   const fetchSharedLists = async () => {
+    if (!user) {
+      console.error("No authenticated user found");
+      return;
+    }
+
     try {
       setIsLoading(true);
+      
+      // Debug: Log current user
+      console.log("Current user:", user.id);
       
       // קודם נבדוק אם יש למשתמש פרופיל
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
 
       if (profileError) {
         console.error("Error fetching profile:", profileError);
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן למצוא את פרופיל המשתמש",
+          variant: "destructive",
+        });
         return;
       }
+
+      console.log("Profile found:", profileData);
 
       // כעת נביא את הרשימות המשותפות
       const { data, error } = await supabase
@@ -57,11 +72,16 @@ export const SharedLists = () => {
             username
           )
         `)
-        .eq("shared_with", user?.id);
+        .eq("shared_with", user.id);
 
       if (error) {
         console.error("Error fetching shared lists:", error);
-        throw error;
+        toast({
+          title: "שגיאה",
+          description: "אירעה שגיאה בטעינת הרשימות המשותפות",
+          variant: "destructive",
+        });
+        return;
       }
 
       if (data) {
