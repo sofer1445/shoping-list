@@ -24,19 +24,39 @@ export const Navigation = () => {
   }, []);
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      // נקה קודם את ה-local storage
+      localStorage.removeItem('supabase.auth.token');
+      
+      // נסה להתנתק
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Logout error:", error);
+        toast({
+          title: "שגיאה בהתנתקות",
+          description: "נסה לרענן את הדף ולהתנתק שוב",
+          variant: "destructive",
+        });
+      } else {
+        // נקה את המצב המקומי
+        setUser(null);
+        
+        toast({
+          title: "התנתקת בהצלחה",
+          description: "להתראות!",
+        });
+        
+        // נווט לדף ההתחברות
+        navigate("/auth", { replace: true });
+      }
+    } catch (error: any) {
+      console.error("Unexpected logout error:", error);
       toast({
         title: "שגיאה בהתנתקות",
-        description: error.message,
+        description: error.message || "אירעה שגיאה לא צפויה",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "התנתקת בהצלחה",
-        description: "להתראות!",
-      });
-      navigate("/auth");
     }
   };
 
