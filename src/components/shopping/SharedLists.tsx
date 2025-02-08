@@ -4,6 +4,8 @@ import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Loader2, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface SharedList {
   id: string;
@@ -76,7 +78,8 @@ export const SharedLists = () => {
 
   if (isLoading) {
     return (
-      <div className="text-center text-muted-foreground p-4">
+      <div className="flex items-center justify-center text-muted-foreground p-4">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         טוען רשימות...
       </div>
     );
@@ -84,8 +87,10 @@ export const SharedLists = () => {
 
   if (sharedLists.length === 0) {
     return (
-      <div className="text-center text-muted-foreground p-4">
-        אין רשימות משותפות
+      <div className="flex flex-col items-center justify-center text-muted-foreground p-4 space-y-2">
+        <Users className="h-12 w-12 mb-2" />
+        <p>אין רשימות משותפות</p>
+        <p className="text-sm">רשימות שאחרים משתפים איתך יופיעו כאן</p>
       </div>
     );
   }
@@ -100,9 +105,9 @@ export const SharedLists = () => {
             onClick={() => handleListClick(list.id)}
             className="flex items-center justify-between p-4 bg-white rounded-lg border cursor-pointer hover:border-primary transition-colors"
           >
-            <div className="text-sm text-muted-foreground">
+            <Badge variant={list.permission === "edit" ? "default" : "secondary"}>
               {list.permission === "edit" ? "עריכה מלאה" : "צפייה בלבד"}
-            </div>
+            </Badge>
             <div className="text-right">
               <div className="font-medium">{list.name}</div>
               <div className="text-sm text-muted-foreground">
