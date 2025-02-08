@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +35,7 @@ export const SharedLists = () => {
         .select(`
           list_id,
           permission,
-          shopping_lists!inner (
+          shopping_lists!list_shares_list_id_fkey (
             id,
             name
           ),
