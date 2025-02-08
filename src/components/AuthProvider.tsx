@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           localStorage.removeItem('supabase.auth.token');
           
           if (location.pathname !== '/auth') {
-            navigate('/auth');
+            navigate('/auth', { replace: true });
           }
           return;
         }
@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (!session && location.pathname !== '/auth') {
-          navigate('/auth');
+          navigate('/auth', { replace: true });
         }
       } catch (error: any) {
         console.error("Error getting session:", error);
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
         
         if (location.pathname !== '/auth') {
-          navigate('/auth');
+          navigate('/auth', { replace: true });
         }
       } finally {
         setIsLoading(false);
@@ -81,13 +81,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(null);
         localStorage.removeItem('supabase.auth.token');
         
+        // Try to sign out from the server
+        try {
+          await supabase.auth.signOut();
+        } catch (error) {
+          console.error("Error during server signout:", error);
+        }
+        
         if (location.pathname !== '/auth') {
-          navigate('/auth');
+          navigate('/auth', { replace: true });
         }
       } else if (event === 'SIGNED_IN') {
         setUser(session?.user ?? null);
         if (location.pathname === '/auth') {
-          navigate('/');
+          navigate('/', { replace: true });
         }
       } else if (event === 'TOKEN_REFRESHED') {
         setUser(session?.user ?? null);
