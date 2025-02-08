@@ -36,6 +36,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_list_shares_created_by"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_list_shares_list"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_list_shares_shared_with"
+            columns: ["shared_with"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "list_shares_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -124,6 +145,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_shopping_items_completed_by"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_shopping_items_created_by"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_shopping_items_list"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shopping_items_completed_by_fkey"
             columns: ["completed_by"]
             isOneToOne: false
@@ -173,6 +215,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_shopping_lists_created_by"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shopping_lists_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -205,6 +254,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_user_activity_log_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_activity_log_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -223,6 +279,13 @@ export type Database = {
           user_id: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_user_activity_log_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_activity_log_user_id_fkey"
             columns: ["user_id"]
