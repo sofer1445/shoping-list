@@ -15,6 +15,11 @@ export const useItemsFetching = () => {
 
     try {
       console.log("Fetching items for list:", currentListId);
+      
+      // Add Authorization header explicitly
+      const { data: session } = await supabase.auth.getSession();
+      console.log("Current session:", session ? "Valid" : "Invalid");
+
       const { data, error } = await supabase
         .from("shopping_items")
         .select("*")
@@ -29,12 +34,13 @@ export const useItemsFetching = () => {
           errorMessage: error.message,
           details: error.details,
           hint: error.hint,
-          listId: currentListId
+          listId: currentListId,
+          hasSession: !!session
         });
         throw error;
       }
 
-      console.log("Fetched items:", data?.length || 0, "items");
+      console.log("Fetched items successfully:", data?.length || 0, "items");
       const items = data || [];
       saveItemsToLocalStorage(items);
       return { items, isOffline: false, hasError: false };
@@ -42,7 +48,12 @@ export const useItemsFetching = () => {
       console.error("Detailed error in fetchItems:", {
         error,
         stack: error.stack,
-        context: { listId: currentListId }
+        context: { 
+          listId: currentListId,
+          url: error.url,
+          message: error.message,
+          status: error.status
+        }
       });
       const offlineItems = handleOfflineMode();
       return {
