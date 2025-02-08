@@ -66,7 +66,7 @@ export const SharedLists = () => {
           id,
           name,
           created_by,
-          list_shares!inner (
+          list_shares!list_shares_list_id_fkey (
             permission,
             shared_with
           ),
