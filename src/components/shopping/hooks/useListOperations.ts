@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -10,6 +11,7 @@ export const useListOperations = (user: any) => {
 
   const createNewList = async () => {
     try {
+      console.log("Creating new list for user:", user?.id);
       const { data: newList, error: createError } = await supabase
         .from("shopping_lists")
         .insert({
@@ -19,7 +21,18 @@ export const useListOperations = (user: any) => {
         .select()
         .single();
 
-      if (createError) throw createError;
+      if (createError) {
+        console.error("Error details from createNewList:", {
+          error: createError,
+          errorCode: createError.code,
+          errorMessage: createError.message,
+          details: createError.details,
+          hint: createError.hint
+        });
+        throw createError;
+      }
+
+      console.log("Successfully created new list:", newList);
 
       if (newList) {
         await logActivity('list_created', { list_id: newList.id });
@@ -30,7 +43,11 @@ export const useListOperations = (user: any) => {
         return newList.id;
       }
     } catch (error: any) {
-      console.error("Error in createNewList:", error);
+      console.error("Detailed error in createNewList:", {
+        error,
+        stack: error.stack,
+        context: { userId: user?.id }
+      });
       toast({
         title: "שגיאה",
         description: "אירעה שגיאה בעת יצירת הרשימה",
@@ -42,6 +59,7 @@ export const useListOperations = (user: any) => {
 
   const fetchExistingList = async () => {
     try {
+      console.log("Fetching existing list for user:", user?.id);
       const { data: existingList, error: fetchError } = await supabase
         .from("shopping_lists")
         .select("id")
@@ -51,10 +69,29 @@ export const useListOperations = (user: any) => {
         .limit(1)
         .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("Error details from fetchExistingList:", {
+          error: fetchError,
+          errorCode: fetchError.code,
+          errorMessage: fetchError.message,
+          details: fetchError.details,
+          hint: fetchError.hint,
+          query: {
+            userId: user?.id,
+            archived: false
+          }
+        });
+        throw fetchError;
+      }
+
+      console.log("Fetch existing list result:", existingList);
       return existingList?.id || null;
-    } catch (error) {
-      console.error("Error in fetchExistingList:", error);
+    } catch (error: any) {
+      console.error("Detailed error in fetchExistingList:", {
+        error,
+        stack: error.stack,
+        context: { userId: user?.id }
+      });
       return null;
     }
   };

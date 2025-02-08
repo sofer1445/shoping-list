@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
@@ -34,7 +35,17 @@ export const useShoppingList = () => {
         .eq("archived", false)
         .order("created_at", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error details from fetchItems:", {
+          error,
+          errorCode: error.code,
+          errorMessage: error.message,
+          details: error.details,
+          hint: error.hint,
+          listId: currentListId
+        });
+        throw error;
+      }
 
       console.log("Fetched items:", data?.length || 0, "items");
       setItems(data || []);
@@ -42,7 +53,11 @@ export const useShoppingList = () => {
       setHasError(false);
       setIsOfflineMode(false);
     } catch (error: any) {
-      console.error("Error fetching items:", error);
+      console.error("Detailed error in fetchItems:", {
+        error,
+        stack: error.stack,
+        context: { listId: currentListId }
+      });
       const offlineItems = handleOfflineMode();
       setItems(offlineItems);
       setIsOfflineMode(true);
@@ -53,12 +68,19 @@ export const useShoppingList = () => {
   }, [currentListId, toast]);
 
   const createInitialList = useCallback(async () => {
-    if (!user || hasAttemptedInitialFetch) return;
+    if (!user || hasAttemptedInitialFetch) {
+      console.log("Skipping initial list creation:", { 
+        hasUser: !!user, 
+        hasAttemptedInitialFetch 
+      });
+      return;
+    }
 
     setIsLoading(true);
     setHasAttemptedInitialFetch(true);
 
     try {
+      console.log("Attempting to fetch existing list");
       const existingListId = await fetchExistingList();
       
       if (existingListId) {
@@ -67,13 +89,20 @@ export const useShoppingList = () => {
         return;
       }
 
+      console.log("No existing list found, creating new list");
       const newListId = await createNewList();
       if (newListId) {
         console.log("Created new list:", newListId);
         setCurrentListId(newListId);
+      } else {
+        console.error("Failed to create new list - no ID returned");
       }
     } catch (error) {
-      console.error("Error in createInitialList:", error);
+      console.error("Detailed error in createInitialList:", {
+        error,
+        stack: error.stack,
+        context: { userId: user?.id }
+      });
       setHasError(true);
       setIsOfflineMode(true);
     } finally {
@@ -83,12 +112,18 @@ export const useShoppingList = () => {
 
   useEffect(() => {
     if (user && !currentListId && !isLoading) {
+      console.log("Triggering createInitialList due to:", {
+        hasUser: !!user,
+        currentListId,
+        isLoading
+      });
       createInitialList();
     }
   }, [user, currentListId, createInitialList, isLoading]);
 
   useEffect(() => {
     if (currentListId) {
+      console.log("Triggering fetchItems due to currentListId change:", currentListId);
       fetchItems();
     }
   }, [currentListId, fetchItems]);
