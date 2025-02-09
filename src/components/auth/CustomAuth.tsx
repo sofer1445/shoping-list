@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,6 @@ export const CustomAuth = ({ redirectTo }: AuthProps) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<"sign_in" | "sign_up">("sign_in");
-  const [showResendButton, setShowResendButton] = useState(false);
   const { toast } = useToast();
 
   const validatePassword = (password: string) => {
@@ -79,11 +79,11 @@ export const CustomAuth = ({ redirectTo }: AuthProps) => {
       }
 
       if (data) {
-        setShowResendButton(true);
         toast({
           title: "You have successfully registered!",
-          description: "A confirmation email has been sent to you. Please check your mailbox.",
+          description: "You can now log in with your credentials.",
         });
+        setView("sign_in");
       }
     } catch (error: any) {
       toast({
@@ -106,42 +106,8 @@ export const CustomAuth = ({ redirectTo }: AuthProps) => {
       });
 
       if (error) {
-        if (error.message.includes('Email not confirmed')) {
-          toast({
-            title: "Email not confirmed",
-            description: "Please confirm your email address before signing in",
-            variant: "destructive",
-          });
-          setShowResendButton(true);
-        } else {
-          throw error;
-        }
+        throw error;
       }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendVerificationEmail = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Sent successfully",
-        description: "A new verification email has been sent",
-      });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -237,17 +203,6 @@ export const CustomAuth = ({ redirectTo }: AuthProps) => {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Registering..." : "Register"}
             </Button>
-            {showResendButton && (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full mt-2"
-                onClick={handleResendVerificationEmail}
-                disabled={loading}
-              >
-                Send a verification email
-              </Button>
-            )}
           </form>
         </TabsContent>
       </Tabs>
