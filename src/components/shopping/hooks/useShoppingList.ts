@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
@@ -9,6 +10,8 @@ export const useShoppingList = () => {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [currentListId, setCurrentListId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [hasAttemptedInitialFetch, setHasAttemptedInitialFetch] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -31,13 +34,19 @@ export const useShoppingList = () => {
 
       if (error) {
         console.error("Error fetching items:", error);
+        setHasError(true);
+        setIsOfflineMode(false);
         throw error;
       }
 
       console.log("Fetched items:", data?.length || 0, "items");
       setItems(data || []);
+      setHasError(false);
+      setIsOfflineMode(false);
     } catch (error: any) {
       console.error("Error fetching items:", error);
+      setHasError(true);
+      setIsOfflineMode(true);
       toast({
         title: "שגיאה",
         description: "לא ניתן היה לטעון את הפריטים",
@@ -64,12 +73,16 @@ export const useShoppingList = () => {
         .eq("archived", false)
         .limit(1);
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        setHasError(true);
+        throw fetchError;
+      }
 
       // אם יש רשימה קיימת, השתמש בה
       if (existingLists && existingLists.length > 0) {
         console.log("Using existing list:", existingLists[0].id);
         setCurrentListId(existingLists[0].id);
+        setHasError(false);
         return;
       }
 
@@ -83,11 +96,15 @@ export const useShoppingList = () => {
         .select()
         .single();
 
-      if (createError) throw createError;
+      if (createError) {
+        setHasError(true);
+        throw createError;
+      }
 
       if (newList) {
         console.log("Created new list:", newList.id);
         setCurrentListId(newList.id);
+        setHasError(false);
         await logActivity('list_created', { list_id: newList.id });
         toast({
           title: "רשימה חדשה נוצרה",
@@ -96,6 +113,7 @@ export const useShoppingList = () => {
       }
     } catch (error: any) {
       console.error("Error in createInitialList:", error);
+      setHasError(true);
       toast({
         title: "שגיאה",
         description: "לא ניתן היה ליצור רשימה חדשה",
@@ -126,5 +144,7 @@ export const useShoppingList = () => {
     createInitialList,
     fetchItems,
     isLoading,
+    hasError,
+    isOfflineMode,
   };
 };
