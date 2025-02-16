@@ -5,6 +5,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 import { ShoppingItem } from "../types";
 import { useActivityLog } from "@/hooks/useActivityLog";
+import { useItemsFetching } from "./useItemsFetching";
 
 export const useShoppingList = () => {
   const [items, setItems] = useState<ShoppingItem[]>([]);
@@ -16,6 +17,7 @@ export const useShoppingList = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { logActivity } = useActivityLog();
+  const { fetchItems: fetchItemsFromDB } = useItemsFetching();
 
   const fetchItems = useCallback(async () => {
     if (!currentListId) {
@@ -24,36 +26,22 @@ export const useShoppingList = () => {
     }
 
     try {
-      console.log("Fetching items for list:", currentListId);
-      const { data, error } = await supabase
-        .from("shopping_items")
-        .select("*")
-        .eq("list_id", currentListId)
-        .eq("archived", false)
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        console.error("Error fetching items:", error);
-        setHasError(true);
-        setIsOfflineMode(false);
-        throw error;
+      const { items: fetchedItems, isOffline, hasError: fetchError } = await fetchItemsFromDB(currentListId);
+      setItems(fetchedItems);
+      setIsOfflineMode(isOffline);
+      setHasError(fetchError);
+      
+      if (fetchError) {
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן היה לטעון את הפריטים",
+          variant: "destructive",
+        });
       }
-
-      console.log("Fetched items:", data?.length || 0, "items");
-      setItems(data || []);
-      setHasError(false);
-      setIsOfflineMode(false);
-    } catch (error: any) {
-      console.error("Error fetching items:", error);
-      setHasError(true);
-      setIsOfflineMode(true);
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן היה לטעון את הפריטים",
-        variant: "destructive",
-      });
+    } catch (error) {
+      console.error("Error in fetchItems:", error);
     }
-  }, [currentListId, toast]);
+  }, [currentListId, toast, fetchItemsFromDB]);
 
   const createInitialList = useCallback(async () => {
     if (!user || hasAttemptedInitialFetch) {
@@ -71,17 +59,23 @@ export const useShoppingList = () => {
         .select("id")
         .eq("created_by", user.id)
         .eq("archived", false)
-        .limit(1);
+        .limit(1)
+        .maybeSingle();
 
       if (fetchError) {
         setHasError(true);
-        throw fetchError;
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן היה לבדוק רשימות קיימות",
+          variant: "destructive",
+        });
+        return;
       }
 
       // אם יש רשימה קיימת, השתמש בה
-      if (existingLists && existingLists.length > 0) {
-        console.log("Using existing list:", existingLists[0].id);
-        setCurrentListId(existingLists[0].id);
+      if (existingLists) {
+        console.log("Using existing list:", existingLists.id);
+        setCurrentListId(existingLists.id);
         setHasError(false);
         return;
       }
@@ -98,7 +92,12 @@ export const useShoppingList = () => {
 
       if (createError) {
         setHasError(true);
-        throw createError;
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן היה ליצור רשימה חדשה",
+          variant: "destructive",
+        });
+        return;
       }
 
       if (newList) {
@@ -111,14 +110,8 @@ export const useShoppingList = () => {
           description: "רשימת קניות חדשה נוצרה בהצלחה",
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error in createInitialList:", error);
-      setHasError(true);
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן היה ליצור רשימה חדשה",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
