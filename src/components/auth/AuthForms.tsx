@@ -32,6 +32,22 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
     return errors;
   };
 
+  const checkEmailExists = async (email: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+        },
+      });
+      // If we get here without an error, the email exists
+      return !error;
+    } catch {
+      // If there's an error, treat it as email not existing
+      return false;
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -56,6 +72,18 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
 
     try {
       setLoading(true);
+      
+      // Check if email exists before attempting to sign up
+      const emailExists = await checkEmailExists(email);
+      if (emailExists) {
+        toast({
+          title: "Error",
+          description: "This email is already registered. Please use a different email or try logging in.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -64,18 +92,7 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
         },
       });
 
-      if (error) {
-        if (error.message.includes('Already registered')) {
-          toast({
-            title: "Error",
-            description: "Email address already registered",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
-        return;
-      }
+      if (error) throw error;
 
       if (data) {
         toast({
