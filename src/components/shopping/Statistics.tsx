@@ -28,15 +28,15 @@ export const Statistics = ({ items }: StatisticsProps) => {
       value
     }));
 
-    // Items by day (mock data for demonstration)
+    // Fixed daily data - using static data instead of random
     const dailyData = [
-      { day: 'א', items: Math.floor(Math.random() * 10) + 5 },
-      { day: 'ב', items: Math.floor(Math.random() * 10) + 5 },
-      { day: 'ג', items: Math.floor(Math.random() * 10) + 5 },
-      { day: 'ד', items: Math.floor(Math.random() * 10) + 5 },
-      { day: 'ה', items: Math.floor(Math.random() * 10) + 5 },
-      { day: 'ו', items: Math.floor(Math.random() * 10) + 5 },
-      { day: 'ש', items: Math.floor(Math.random() * 10) + 5 },
+      { day: 'א', items: 8 },
+      { day: 'ב', items: 12 },
+      { day: 'ג', items: 15 },
+      { day: 'ד', items: 10 },
+      { day: 'ה', items: 7 },
+      { day: 'ו', items: 14 },
+      { day: 'ש', items: 9 },
     ];
 
     // Most frequent items
@@ -130,7 +130,7 @@ export const Statistics = ({ items }: StatisticsProps) => {
         <CardHeader className="p-0 pb-3">
           <CardTitle className="text-base">פעילות שבועית</CardTitle>
           <CardDescription className="text-sm">
-            כמות הפריטים שנוספו בכל יום
+            כמות הפריטים שנוספו בכל יום (נתונים לדוגמה)
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">

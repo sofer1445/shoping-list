@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Lightbulb, X, Plus, Sparkles } from "lucide-react";
+import { Lightbulb, X, Plus, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -22,6 +22,8 @@ export const SmartRecommendations = ({
   const [contextualRecs, setContextualRecs] = useState<string[]>([]);
   const [dismissedRecs, setDismissedRecs] = useState<Set<string>>(new Set());
   const [recommendationSystem] = useState(() => new RecommendationSystem());
+  const [isMainExpanded, setIsMainExpanded] = useState(true);
+  const [isContextualExpanded, setIsContextualExpanded] = useState(true);
 
   // Smart contextual recommendations based on current items
   const smartRecommendations = {
@@ -96,41 +98,59 @@ export const SmartRecommendations = ({
       {recommendations.length > 0 && (
         <Card className="p-3">
           <CardHeader className="p-0 pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Lightbulb className="h-4 w-4 text-yellow-500" />
-              המלצות חכמות
-            </CardTitle>
-            <CardDescription className="text-sm">
-              מוצרים שלרוב קונים יחד עם הפריטים ברשימה שלך
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="flex flex-wrap gap-2">
-              {recommendations.map((item) => (
-                <div
-                  key={item}
-                  className="group flex items-center gap-1 px-3 py-2 bg-blue-50 rounded-full text-sm border border-blue-200 hover:bg-blue-100 transition-colors"
-                >
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleAddRecommendation(item)}
-                    className="h-auto p-0 text-blue-700 hover:text-blue-900 font-medium text-sm"
-                  >
-                    {item}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleDismiss(item)}
-                    className="h-auto p-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1"
-                  >
-                    <X size={12} className="text-blue-500 hover:text-red-500" />
-                  </Button>
-                </div>
-              ))}
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4 text-yellow-500" />
+                  המלצות חכמות
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  מוצרים שלרוב קונים יחד עם הפריטים ברשימה שלך
+                </CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMainExpanded(!isMainExpanded)}
+                className="h-8 w-8 p-0"
+              >
+                {isMainExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
             </div>
-          </CardContent>
+          </CardHeader>
+          {isMainExpanded && (
+            <CardContent className="p-0">
+              <div className="flex flex-wrap gap-2">
+                {recommendations.map((item) => (
+                  <div
+                    key={item}
+                    className="group flex items-center gap-1 px-3 py-2 bg-blue-50 rounded-full text-sm border border-blue-200 hover:bg-blue-100 transition-colors"
+                  >
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleAddRecommendation(item)}
+                      className="h-auto p-0 text-blue-700 hover:text-blue-900 font-medium text-sm"
+                    >
+                      {item}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDismiss(item)}
+                      className="h-auto p-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1"
+                    >
+                      <X size={12} className="text-blue-500 hover:text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
         </Card>
       )}
 
@@ -138,40 +158,58 @@ export const SmartRecommendations = ({
       {contextualRecs.length > 0 && (
         <Card className="p-3">
           <CardHeader className="p-0 pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-purple-500" />
-              עוד הצעות מעניינות
-            </CardTitle>
-            <CardDescription className="text-sm">
-              מוצרים פופולריים מהקטגוריות שלך
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="flex flex-wrap gap-2">
-              {contextualRecs.map((item) => (
-                <Badge
-                  key={item}
-                  variant="secondary"
-                  className="cursor-pointer hover:bg-purple-100 transition-colors group text-sm px-3 py-1.5"
-                  onClick={() => handleAddRecommendation(item)}
-                >
-                  <Plus size={12} className="ml-1" />
-                  {item}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDismiss(item);
-                    }}
-                    className="h-auto p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X size={10} className="text-gray-500 hover:text-red-500" />
-                  </Button>
-                </Badge>
-              ))}
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-500" />
+                  עוד הצעות מעניינות
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  מוצרים פופולריים מהקטגוריות שלך
+                </CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsContextualExpanded(!isContextualExpanded)}
+                className="h-8 w-8 p-0"
+              >
+                {isContextualExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
             </div>
-          </CardContent>
+          </CardHeader>
+          {isContextualExpanded && (
+            <CardContent className="p-0">
+              <div className="flex flex-wrap gap-2">
+                {contextualRecs.map((item) => (
+                  <Badge
+                    key={item}
+                    variant="secondary"
+                    className="cursor-pointer hover:bg-purple-100 transition-colors group text-sm px-3 py-1.5"
+                    onClick={() => handleAddRecommendation(item)}
+                  >
+                    <Plus size={12} className="ml-1" />
+                    {item}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDismiss(item);
+                      }}
+                      className="h-auto p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={10} className="text-gray-500 hover:text-red-500" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          )}
         </Card>
       )}
     </div>
