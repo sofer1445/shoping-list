@@ -62,15 +62,15 @@ export const Statistics = ({ items }: StatisticsProps) => {
   }, [items]);
 
   return (
-    <div className="space-y-6">
-      {/* Overview Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <div className="space-y-4 px-1">
+      {/* Overview Cards - Mobile Optimized Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Card className="p-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
             <CardTitle className="text-sm font-medium">סה"כ פריטים</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 pt-2">
             <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-xs text-muted-foreground">
               ברשימה הנוכחית
@@ -78,12 +78,12 @@ export const Statistics = ({ items }: StatisticsProps) => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="p-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
             <CardTitle className="text-sm font-medium">אחוז השלמה</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 pt-2">
             <div className="text-2xl font-bold">{stats.completionRate}%</div>
             <p className="text-xs text-muted-foreground">
               {stats.completed} מתוך {stats.total}
@@ -92,17 +92,17 @@ export const Statistics = ({ items }: StatisticsProps) => {
         </Card>
       </div>
 
-      {/* Category Distribution */}
+      {/* Category Distribution - Mobile Optimized */}
       {stats.categoryData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">התפלגות לפי קטגוריות</CardTitle>
-            <CardDescription>
+        <Card className="p-3">
+          <CardHeader className="p-0 pb-3">
+            <CardTitle className="text-base">התפלגות לפי קטגוריות</CardTitle>
+            <CardDescription className="text-sm">
               כמות הפריטים בכל קטגוריה
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
+          <CardContent className="p-0">
+            <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Pie
                   data={stats.categoryData}
@@ -110,7 +110,7 @@ export const Statistics = ({ items }: StatisticsProps) => {
                   cy="50%"
                   labelLine={false}
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  outerRadius={70}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -125,20 +125,20 @@ export const Statistics = ({ items }: StatisticsProps) => {
         </Card>
       )}
 
-      {/* Daily Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">פעילות שבועית</CardTitle>
-          <CardDescription>
+      {/* Daily Activity - Mobile Optimized */}
+      <Card className="p-3">
+        <CardHeader className="p-0 pb-3">
+          <CardTitle className="text-base">פעילות שבועית</CardTitle>
+          <CardDescription className="text-sm">
             כמות הפריטים שנוספו בכל יום
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={200}>
+        <CardContent className="p-0">
+          <ResponsiveContainer width="100%" height={160}>
             <BarChart data={stats.dailyData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
+              <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
               <Bar dataKey="items" fill="#8884d8" />
             </BarChart>
@@ -146,27 +146,27 @@ export const Statistics = ({ items }: StatisticsProps) => {
         </CardContent>
       </Card>
 
-      {/* Top Items */}
+      {/* Top Items - Mobile Optimized */}
       {stats.topItems.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
+        <Card className="p-3">
+          <CardHeader className="p-0 pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
               הפריטים הפופולריים ביותר
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               המוצרים שמופיעים הכי הרבה ברשימות שלך
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <div className="space-y-3">
               {stats.topItems.map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between">
+                <div key={item.name} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                   <div className="flex items-center gap-3">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-sm font-bold">
                       {index + 1}
                     </span>
-                    <span>{item.name}</span>
+                    <span className="text-sm">{item.name}</span>
                   </div>
                   <span className="text-sm text-muted-foreground">
                     {item.count} פעמים

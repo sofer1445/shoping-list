@@ -91,20 +91,20 @@ export const SmartRecommendations = ({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Main Recommendations */}
+    <div className="space-y-3">
+      {/* Main Recommendations - Mobile Optimized */}
       {recommendations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-yellow-500" />
+        <Card className="p-3">
+          <CardHeader className="p-0 pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-yellow-500" />
               המלצות חכמות
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               מוצרים שלרוב קונים יחד עם הפריטים ברשימה שלך
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <div className="flex flex-wrap gap-2">
               {recommendations.map((item) => (
                 <div
@@ -115,7 +115,7 @@ export const SmartRecommendations = ({
                     size="sm"
                     variant="ghost"
                     onClick={() => handleAddRecommendation(item)}
-                    className="h-auto p-0 text-blue-700 hover:text-blue-900 font-medium"
+                    className="h-auto p-0 text-blue-700 hover:text-blue-900 font-medium text-sm"
                   >
                     {item}
                   </Button>
@@ -123,7 +123,7 @@ export const SmartRecommendations = ({
                     size="sm"
                     variant="ghost"
                     onClick={() => handleDismiss(item)}
-                    className="h-auto p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-auto p-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1"
                   >
                     <X size={12} className="text-blue-500 hover:text-red-500" />
                   </Button>
@@ -134,25 +134,25 @@ export const SmartRecommendations = ({
         </Card>
       )}
 
-      {/* Contextual Recommendations */}
+      {/* Contextual Recommendations - Mobile Optimized */}
       {contextualRecs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-500" />
+        <Card className="p-3">
+          <CardHeader className="p-0 pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-purple-500" />
               עוד הצעות מעניינות
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               מוצרים פופולריים מהקטגוריות שלך
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <div className="flex flex-wrap gap-2">
               {contextualRecs.map((item) => (
                 <Badge
                   key={item}
                   variant="secondary"
-                  className="cursor-pointer hover:bg-purple-100 transition-colors group"
+                  className="cursor-pointer hover:bg-purple-100 transition-colors group text-sm px-3 py-1.5"
                   onClick={() => handleAddRecommendation(item)}
                 >
                   <Plus size={12} className="ml-1" />

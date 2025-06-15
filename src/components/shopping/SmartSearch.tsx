@@ -76,7 +76,7 @@ export const SmartSearch = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="relative">
         <div className="relative">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -85,7 +85,7 @@ export const SmartSearch = ({
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="חיפוש חכם של מוצרים..."
-            className="pr-10 text-right"
+            className="pr-10 text-right h-12 text-base"
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           />
@@ -95,7 +95,7 @@ export const SmartSearch = ({
         {showSuggestions && (suggestions.length > 0 || recentSearches.length > 0) && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
             {suggestions.length > 0 && (
-              <div className="p-2">
+              <div className="p-3">
                 <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
                   <TrendingUp className="h-3 w-3" />
                   הצעות פופולריות
@@ -104,7 +104,7 @@ export const SmartSearch = ({
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="w-full text-right p-2 hover:bg-gray-50 rounded text-sm"
+                    className="w-full text-right p-3 hover:bg-gray-50 rounded text-sm border-b border-gray-100 last:border-b-0"
                   >
                     {suggestion}
                   </button>
@@ -117,13 +117,13 @@ export const SmartSearch = ({
             )}
             
             {recentSearches.length > 0 && (
-              <div className="p-2">
+              <div className="p-3">
                 <div className="text-xs text-gray-500 mb-2">חיפושים אחרונים</div>
                 {recentSearches.map((search, index) => (
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(search)}
-                    className="w-full text-right p-2 hover:bg-gray-50 rounded text-sm text-gray-600"
+                    className="w-full text-right p-3 hover:bg-gray-50 rounded text-sm text-gray-600 border-b border-gray-100 last:border-b-0"
                   >
                     {search}
                   </button>
@@ -134,34 +134,38 @@ export const SmartSearch = ({
         )}
       </div>
 
-      {/* Category Filters */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={selectedCategory === null ? "default" : "outline"}
-          size="sm"
-          onClick={() => onFilterByCategory(null)}
-          className="h-8"
-        >
-          <Filter className="h-3 w-3 ml-1" />
-          הכל
-        </Button>
-        {categories.map((category) => (
-          <Badge
-            key={category}
-            variant={selectedCategory === category ? "default" : "secondary"}
-            className={cn(
-              "cursor-pointer transition-colors",
-              selectedCategory === category 
-                ? "bg-primary text-primary-foreground" 
-                : "hover:bg-primary/10"
-            )}
-            onClick={() => onFilterByCategory(
-              selectedCategory === category ? null : category
-            )}
+      {/* Category Filters - Mobile Optimized */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 mb-2">
+          <Button
+            variant={selectedCategory === null ? "default" : "outline"}
+            size="sm"
+            onClick={() => onFilterByCategory(null)}
+            className="h-9 px-4"
           >
-            {category}
-          </Badge>
-        ))}
+            <Filter className="h-3 w-3 ml-1" />
+            הכל
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <Badge
+              key={category}
+              variant={selectedCategory === category ? "default" : "secondary"}
+              className={cn(
+                "cursor-pointer transition-colors px-3 py-1.5 text-sm",
+                selectedCategory === category 
+                  ? "bg-primary text-primary-foreground" 
+                  : "hover:bg-primary/10"
+              )}
+              onClick={() => onFilterByCategory(
+                selectedCategory === category ? null : category
+              )}
+            >
+              {category}
+            </Badge>
+          ))}
+        </div>
       </div>
     </div>
   );

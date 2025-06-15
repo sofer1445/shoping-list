@@ -106,9 +106,9 @@ export const ShoppingList = () => {
   });
 
   const renderShoppingList = (isSharedList: boolean = false) => (
-    <>
+    <div className="space-y-4">
       {isOfflineMode && (
-        <Alert className="mb-4">
+        <Alert className="mx-1">
           <CloudOff className="h-4 w-4" />
           <AlertTitle>מצב לא מקוון</AlertTitle>
           <AlertDescription>
@@ -117,7 +117,7 @@ export const ShoppingList = () => {
         </Alert>
       )}
       
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between px-1">
         <div className="flex gap-2">
           {!isSharedList && (
             <>
@@ -126,12 +126,12 @@ export const ShoppingList = () => {
             </>
           )}
         </div>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-xl font-bold">
           {isSharedList ? "רשימה משותפת" : "רשימת קניות"}
         </h1>
       </div>
 
-      <div className="flex flex-col gap-4 mb-6">
+      <div className="space-y-4 px-1">
         <SmartSearch
           searchQuery={searchQuery}
           items={items}
@@ -149,7 +149,9 @@ export const ShoppingList = () => {
         />
       </div>
 
-      <FilterButtons filter={filter} onFilterChange={setFilter} />
+      <div className="px-1">
+        <FilterButtons filter={filter} onFilterChange={setFilter} />
+      </div>
 
       <DndContext
         sensors={sensors}
@@ -160,7 +162,7 @@ export const ShoppingList = () => {
           items={filteredItems}
           strategy={verticalListSortingStrategy}
         >
-          <div className="space-y-2">
+          <div className="space-y-2 px-1">
             {filteredItems.map((item) => (
               <SortableItem
                 key={item.id}
@@ -181,7 +183,7 @@ export const ShoppingList = () => {
         onSave={handleSaveEdit}
         categories={categories}
       />
-    </>
+    </div>
   );
 
   if (isLoading) {
@@ -207,38 +209,44 @@ export const ShoppingList = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto p-4 min-h-screen bg-white">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full mb-6">
-          <TabsTrigger value="current" className="flex-1">רשימה נוכחית</TabsTrigger>
-          <TabsTrigger value="statistics" className="flex-1">
-            <BarChart3 className="h-4 w-4 ml-1" />
-            סטטיסטיקות
-          </TabsTrigger>
-          <TabsTrigger value="shared" className="flex-1">רשימות משותפות</TabsTrigger>
-          <TabsTrigger value="archived" className="flex-1">ארכיון</TabsTrigger>
-        </TabsList>
+    <div className="max-w-md mx-auto min-h-screen bg-white">
+      <div className="sticky top-0 bg-white z-40 border-b border-gray-100 p-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="w-full">
+            <TabsTrigger value="current" className="flex-1 text-xs">רשימה נוכחית</TabsTrigger>
+            <TabsTrigger value="statistics" className="flex-1 text-xs">
+              <BarChart3 className="h-3 w-3 ml-1" />
+              נתונים
+            </TabsTrigger>
+            <TabsTrigger value="shared" className="flex-1 text-xs">משותפות</TabsTrigger>
+            <TabsTrigger value="archived" className="flex-1 text-xs">ארכיון</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-        <TabsContent value="current">
-          {currentListId && !searchParams.get("list") && renderShoppingList(false)}
-        </TabsContent>
+      <div className="pb-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsContent value="current" className="mt-0">
+            {currentListId && !searchParams.get("list") && renderShoppingList(false)}
+          </TabsContent>
 
-        <TabsContent value="statistics">
-          <Statistics items={items} />
-        </TabsContent>
+          <TabsContent value="statistics" className="mt-0">
+            <Statistics items={items} />
+          </TabsContent>
 
-        <TabsContent value="shared">
-          {searchParams.get("list") ? (
-            renderShoppingList(true)
-          ) : (
-            <SharedLists />
-          )}
-        </TabsContent>
+          <TabsContent value="shared" className="mt-0 px-3">
+            {searchParams.get("list") ? (
+              renderShoppingList(true)
+            ) : (
+              <SharedLists />
+            )}
+          </TabsContent>
 
-        <TabsContent value="archived">
-          <ArchivedLists />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="archived" className="mt-0 px-3">
+            <ArchivedLists />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
