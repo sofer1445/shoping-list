@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
-import { SearchBar } from "./shopping/SearchBar";
+import { SmartSearch } from "./shopping/SmartSearch";
 import { AddItemForm } from "./shopping/AddItemForm";
 import { FilterButtons } from "./shopping/FilterButtons";
 import { SortableItem } from "./shopping/SortableItem";
@@ -10,13 +11,15 @@ import { ArchivedLists } from "./shopping/ArchivedLists";
 import { SharedLists } from "./shopping/SharedLists";
 import { ArchiveButton } from "./shopping/ArchiveButton";
 import { ShareListDialog } from "./shopping/ShareListDialog";
+import { Statistics } from "./shopping/Statistics";
+import { SmartRecommendations } from "./shopping/SmartRecommendations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useShoppingList } from "./shopping/hooks/useShoppingList";
 import { useShoppingItems } from "./shopping/hooks/useShoppingItems";
 import { ShoppingItem } from "./shopping/types";
 import { useSearchParams } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { AlertCircle, CloudOff } from "lucide-react";
+import { AlertCircle, CloudOff, BarChart3 } from "lucide-react";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
@@ -24,6 +27,7 @@ export const ShoppingList = () => {
   const [searchParams] = useSearchParams();
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
   const [activeTab, setActiveTab] = useState("current");
 
@@ -96,7 +100,9 @@ export const ShoppingList = () => {
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
 
-    return matchesFilter && matchesSearch;
+    const matchesCategory = selectedCategory === null || item.category === selectedCategory;
+
+    return matchesFilter && matchesSearch && matchesCategory;
   });
 
   const renderShoppingList = (isSharedList: boolean = false) => (
@@ -126,19 +132,21 @@ export const ShoppingList = () => {
       </div>
 
       <div className="flex flex-col gap-4 mb-6">
-        <SearchBar
+        <SmartSearch
           searchQuery={searchQuery}
           items={items}
           onSearch={setSearchQuery}
-          onSelectSuggestion={(itemName) => {
-            const item = items.find(i => i.name === itemName);
-            if (item) {
-              setEditingItem(item);
-            }
-          }}
+          onFilterByCategory={setSelectedCategory}
+          selectedCategory={selectedCategory}
         />
 
         <AddItemForm onAdd={addItem} categories={categories} />
+
+        <SmartRecommendations
+          items={items}
+          onAddItem={addItem}
+          categories={categories}
+        />
       </div>
 
       <FilterButtons filter={filter} onFilterChange={setFilter} />
@@ -203,12 +211,20 @@ export const ShoppingList = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full mb-6">
           <TabsTrigger value="current" className="flex-1">רשימה נוכחית</TabsTrigger>
+          <TabsTrigger value="statistics" className="flex-1">
+            <BarChart3 className="h-4 w-4 ml-1" />
+            סטטיסטיקות
+          </TabsTrigger>
           <TabsTrigger value="shared" className="flex-1">רשימות משותפות</TabsTrigger>
           <TabsTrigger value="archived" className="flex-1">ארכיון</TabsTrigger>
         </TabsList>
 
         <TabsContent value="current">
           {currentListId && !searchParams.get("list") && renderShoppingList(false)}
+        </TabsContent>
+
+        <TabsContent value="statistics">
+          <Statistics items={items} />
         </TabsContent>
 
         <TabsContent value="shared">
