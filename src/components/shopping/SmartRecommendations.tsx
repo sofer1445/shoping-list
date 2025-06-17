@@ -25,13 +25,31 @@ export const SmartRecommendations = ({
   const [isMainExpanded, setIsMainExpanded] = useState(true);
   const [isContextualExpanded, setIsContextualExpanded] = useState(true);
 
-  // Smart contextual recommendations based on current items
-  const smartRecommendations = {
-    'ירקות ופירות': ['עגבניות', 'מלפפונים', 'בצל', 'גזר', 'תפוחים', 'בננות'],
-    'מזון': ['לחם', 'אורז', 'פסטה', 'שמן זית', 'מלח', 'פלפל'],
-    'מוצרי חלב': ['חלב', 'גבינה צהובה', 'יוגורט', 'חמאה', 'שמנת'],
-    'ניקיון': ['סבון כלים', 'נייר טואלט', 'משטח לרצפה', 'אקונומיקה'],
-    'אחר': ['בישול', 'תבלינים', 'שמפו', 'משחת שיניים']
+  // Enhanced Hebrew product recommendations by category
+  const hebrewRecommendations = {
+    'ירקות ופירות': [
+      'עגבניות', 'מלפפונים', 'בצל', 'גזר', 'תפוחים', 'בננות', 
+      'פלפל אדום', 'חסה', 'פטרוזיליה', 'לימון', 'תפוז', 'אבוקדו',
+      'תפוחי אדמה', 'בטטה', 'קולרבי', 'כרוב', 'ברוקולי'
+    ],
+    'מזון': [
+      'לחם', 'אורז', 'פסטה', 'שמן זית', 'מלח', 'פלפל שחור',
+      'קמח', 'סוכר', 'שמרים', 'קטשופ', 'מיונז', 'חומץ',
+      'רוטב עגבניות', 'טונה', 'קורנפלקס', 'דגנים', 'חומוס', 'טחינה'
+    ],
+    'מוצרי חלב': [
+      'חלב', 'גבינה צהובה', 'יוגורט', 'חמאה', 'שמנת', 
+      'גבינה לבנה', 'גבינת קוטג\'', 'לבנה', 'קרם פרש'
+    ],
+    'ניקיון': [
+      'סבון כלים', 'נייר טואלט', 'משטח לרצפה', 'אקונומיקה',
+      'מטליות', 'נייר מגבת', 'אבקת כביסה', 'מרכך כביסה',
+      'סבון ידיים', 'שמפו', 'קרם גילוח'
+    ],
+    'אחר': [
+      'משחת שיניים', 'מברשת שיניים', 'דאודורנט', 'קרם לחות',
+      'ויטמינים', 'תרופות', 'נרות', 'שקיות זבל', 'נייר כסף'
+    ]
   };
 
   // Generate recommendations based on what's already in the list
@@ -46,7 +64,7 @@ export const SmartRecommendations = ({
 
     // Get contextual recommendations based on categories
     const contextRecs = currentCategories.flatMap(category => 
-      smartRecommendations[category] || []
+      hebrewRecommendations[category] || []
     );
 
     // Combine and filter out existing items and dismissed items
@@ -62,9 +80,9 @@ export const SmartRecommendations = ({
   }, [items, dismissedRecs, recommendationSystem]);
 
   const handleAddRecommendation = (itemName: string) => {
-    // Determine category based on smart recommendations
+    // Determine category based on Hebrew recommendations
     let category = categories[0]; // default
-    for (const [cat, items] of Object.entries(smartRecommendations)) {
+    for (const [cat, items] of Object.entries(hebrewRecommendations)) {
       if (items.includes(itemName)) {
         category = cat;
         break;
@@ -93,21 +111,12 @@ export const SmartRecommendations = ({
   }
 
   return (
-    <div className="space-y-3">
-      {/* Main Recommendations - Mobile Optimized */}
+    <div className="space-y-3" dir="rtl">
+      {/* Main Recommendations - Hebrew optimized */}
       {recommendations.length > 0 && (
         <Card className="p-3">
           <CardHeader className="p-0 pb-3">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-yellow-500" />
-                  המלצות חכמות
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  מוצרים שלרוב קונים יחד עם הפריטים ברשימה שלך
-                </CardDescription>
-              </div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -120,11 +129,20 @@ export const SmartRecommendations = ({
                   <ChevronDown className="h-4 w-4" />
                 )}
               </Button>
+              <div className="text-right">
+                <CardTitle className="text-base flex items-center gap-2 justify-end">
+                  <span>המלצות חכמות</span>
+                  <Lightbulb className="h-4 w-4 text-yellow-500" />
+                </CardTitle>
+                <CardDescription className="text-sm text-right">
+                  מוצרים שלרוב קונים יחד עם הפריטים ברשימה שלך
+                </CardDescription>
+              </div>
             </div>
           </CardHeader>
           {isMainExpanded && (
             <CardContent className="p-0">
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 justify-end">
                 {recommendations.map((item) => (
                   <div
                     key={item}
@@ -133,18 +151,18 @@ export const SmartRecommendations = ({
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleAddRecommendation(item)}
-                      className="h-auto p-0 text-blue-700 hover:text-blue-900 font-medium text-sm"
+                      onClick={() => handleDismiss(item)}
+                      className="h-auto p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      {item}
+                      <X size={12} className="text-blue-500 hover:text-red-500" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleDismiss(item)}
-                      className="h-auto p-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1"
+                      onClick={() => handleAddRecommendation(item)}
+                      className="h-auto p-0 text-blue-700 hover:text-blue-900 font-medium text-sm"
                     >
-                      <X size={12} className="text-blue-500 hover:text-red-500" />
+                      {item}
                     </Button>
                   </div>
                 ))}
@@ -154,20 +172,11 @@ export const SmartRecommendations = ({
         </Card>
       )}
 
-      {/* Contextual Recommendations - Mobile Optimized */}
+      {/* Contextual Recommendations - Hebrew optimized */}
       {contextualRecs.length > 0 && (
         <Card className="p-3">
           <CardHeader className="p-0 pb-3">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-purple-500" />
-                  עוד הצעות מעניינות
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  מוצרים פופולריים מהקטגוריות שלך
-                </CardDescription>
-              </div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -180,20 +189,27 @@ export const SmartRecommendations = ({
                   <ChevronDown className="h-4 w-4" />
                 )}
               </Button>
+              <div className="text-right">
+                <CardTitle className="text-base flex items-center gap-2 justify-end">
+                  <span>עוד הצעות מעניינות</span>
+                  <Sparkles className="h-4 w-4 text-purple-500" />
+                </CardTitle>
+                <CardDescription className="text-sm text-right">
+                  מוצרים פופולריים מהקטגוריות שלך
+                </CardDescription>
+              </div>
             </div>
           </CardHeader>
           {isContextualExpanded && (
             <CardContent className="p-0">
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 justify-end">
                 {contextualRecs.map((item) => (
                   <Badge
                     key={item}
                     variant="secondary"
-                    className="cursor-pointer hover:bg-purple-100 transition-colors group text-sm px-3 py-1.5"
+                    className="cursor-pointer hover:bg-purple-100 transition-colors group text-sm px-3 py-1.5 font-medium"
                     onClick={() => handleAddRecommendation(item)}
                   >
-                    <Plus size={12} className="ml-1" />
-                    {item}
                     <Button
                       size="sm"
                       variant="ghost"
@@ -201,10 +217,12 @@ export const SmartRecommendations = ({
                         e.stopPropagation();
                         handleDismiss(item);
                       }}
-                      className="h-auto p-0 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-auto p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X size={10} className="text-gray-500 hover:text-red-500" />
                     </Button>
+                    <span>{item}</span>
+                    <Plus size={12} className="mr-1" />
                   </Badge>
                 ))}
               </div>

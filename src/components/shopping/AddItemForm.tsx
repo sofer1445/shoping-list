@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { ShoppingItem } from "./types";
@@ -56,29 +57,32 @@ export const AddItemForm = ({ onAdd, categories }: AddItemFormProps) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir="rtl">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex gap-2">
-          <input
-            type="text"
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            placeholder="שם המוצר"
-            className="flex-1 p-2 border rounded-lg text-right"
-          />
           <input
             type="number"
             value={newItemQuantity}
             onChange={(e) => setNewItemQuantity(Number(e.target.value))}
             min="1"
-            className="w-20 p-2 border rounded-lg text-right"
+            className="w-20 p-3 border rounded-lg text-right font-medium"
+            style={{ direction: 'rtl' }}
+          />
+          <input
+            type="text"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            placeholder="שם המוצר"
+            className="flex-1 p-3 border rounded-lg text-right font-medium"
+            style={{ direction: 'rtl' }}
           />
         </div>
 
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="p-2 border rounded-lg text-right"
+          className="p-3 border rounded-lg text-right font-medium"
+          style={{ direction: 'rtl' }}
         >
           {categories.map((category) => (
             <option key={category} value={category}>
@@ -89,10 +93,10 @@ export const AddItemForm = ({ onAdd, categories }: AddItemFormProps) => {
 
         <button
           type="submit"
-          className="flex items-center justify-center gap-2 bg-primary text-white p-2 rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center justify-center gap-2 bg-primary text-white p-3 rounded-lg hover:bg-primary/90 transition-colors font-medium"
         >
+          <span>הוסף פריט</span>
           <Plus size={20} />
-          הוסף פריט
         </button>
       </form>
 

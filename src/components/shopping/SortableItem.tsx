@@ -1,3 +1,4 @@
+
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Trash2, Edit, Check, GripVertical } from "lucide-react";
@@ -5,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { ShoppingItem } from "./types";
 import { ProductImage } from "./ProductImage";
 import { Button } from "@/components/ui/button";
-import { Tooltip } from "@/components/ui/tooltip";
 
 interface SortableItemProps {
   item: ShoppingItem;
@@ -44,17 +44,16 @@ export const SortableItem = ({
         item.isNew && "bg-green-100",
         item.justCompleted && "bg-red-100"
       )}
+      dir="rtl"
     >
       <div className="flex gap-2 items-center">
+        <div 
+          {...listeners} 
+          className="cursor-grab active:cursor-grabbing hover:bg-secondary p-2 rounded-full transition-colors"
+        >
+          <GripVertical size={20} className="text-muted-foreground" />
+        </div>
         <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors"
-            onClick={() => onDelete(item.id)}
-          >
-            <Trash2 size={18} />
-          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -63,12 +62,14 @@ export const SortableItem = ({
           >
             <Edit size={18} />
           </Button>
-        </div>
-        <div 
-          {...listeners} 
-          className="cursor-grab active:cursor-grabbing hover:bg-secondary p-2 rounded-full transition-colors"
-        >
-          <GripVertical size={20} className="text-muted-foreground" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors"
+            onClick={() => onDelete(item.id)}
+          >
+            <Trash2 size={18} />
+          </Button>
         </div>
       </div>
 
@@ -85,15 +86,15 @@ export const SortableItem = ({
           {item.completed && <Check size={16} />}
         </button>
         <div className="flex items-center gap-3">
-          <ProductImage productName={item.name} category={item.category} />
           <div>
-            <div className={cn("font-medium", item.completed && "line-through text-muted-foreground")}>
+            <div className={cn("font-medium text-right", item.completed && "line-through text-muted-foreground")}>
               {item.name}
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground text-right">
               {item.category} • {item.quantity}
             </div>
           </div>
+          <ProductImage productName={item.name} category={item.category} />
         </div>
       </div>
     </div>
