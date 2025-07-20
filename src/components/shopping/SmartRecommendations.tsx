@@ -22,8 +22,8 @@ export const SmartRecommendations = ({
   const [contextualRecs, setContextualRecs] = useState<string[]>([]);
   const [dismissedRecs, setDismissedRecs] = useState<Set<string>>(new Set());
   const [recommendationSystem] = useState(() => new RecommendationSystem());
-  const [isMainExpanded, setIsMainExpanded] = useState(true);
-  const [isContextualExpanded, setIsContextualExpanded] = useState(true);
+  const [isMainExpanded, setIsMainExpanded] = useState(false);
+  const [isContextualExpanded, setIsContextualExpanded] = useState(false);
 
   // Enhanced Hebrew product recommendations by category
   const hebrewRecommendations = {
