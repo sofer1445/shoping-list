@@ -140,7 +140,7 @@ export const ShoppingList = () => {
           selectedCategory={selectedCategory}
         />
 
-        <AddItemForm onAdd={addItem} categories={categories} />
+        <AddItemForm onAdd={addItem} categories={categories} items={items} />
 
         <SmartRecommendations
           items={items}

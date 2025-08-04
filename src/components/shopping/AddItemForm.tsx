@@ -10,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 interface AddItemFormProps {
   onAdd: (item: Omit<ShoppingItem, "id" | "completed" | "isNew">) => void;
   categories: string[];
+  items: ShoppingItem[];
 }
 
-export const AddItemForm = ({ onAdd, categories }: AddItemFormProps) => {
+export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
   const [newItemName, setNewItemName] = useState("");
   const [newItemQuantity, setNewItemQuantity] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState(categories[0]);
@@ -124,7 +125,7 @@ export const AddItemForm = ({ onAdd, categories }: AddItemFormProps) => {
         </TabsContent>
         
         <TabsContent value="bulk">
-          <BulkAddForm onAdd={onAdd} categories={categories} />
+          <BulkAddForm onAdd={onAdd} categories={categories} items={items} />
         </TabsContent>
       </Tabs>
     </div>

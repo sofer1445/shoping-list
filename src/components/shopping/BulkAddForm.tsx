@@ -4,15 +4,18 @@ import { ShoppingItem } from "./types";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
 
 interface BulkAddFormProps {
   onAdd: (item: Omit<ShoppingItem, "id" | "completed" | "isNew">) => void;
   categories: string[];
+  items: ShoppingItem[];
 }
 
-export const BulkAddForm = ({ onAdd, categories }: BulkAddFormProps) => {
+export const BulkAddForm = ({ onAdd, categories, items }: BulkAddFormProps) => {
   const [bulkItems, setBulkItems] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
 
   // מיפוי פריטים לקטגוריות - יכול להיות מורחב או משופר עם AI
   const categoryMapping: Record<string, string> = {
@@ -79,7 +82,7 @@ export const BulkAddForm = ({ onAdd, categories }: BulkAddFormProps) => {
     
     setIsProcessing(true);
     
-    const items = bulkItems
+    const newItems = bulkItems
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0)
@@ -96,14 +99,41 @@ export const BulkAddForm = ({ onAdd, categories }: BulkAddFormProps) => {
         };
       });
 
-    // הוספת הפריטים אחד אחר השני עם השהיה קטנה לחוויה טובה יותר
-    for (const item of items) {
+    // בדיקת כפילויות - סינון פריטים שכבר קיימים ברשימה
+    const existingItemNames = items.map(item => item.name.toLowerCase().trim());
+    const itemsToAdd = newItems.filter(newItem => 
+      !existingItemNames.includes(newItem.name.toLowerCase().trim())
+    );
+    
+    const duplicates = newItems.filter(newItem => 
+      existingItemNames.includes(newItem.name.toLowerCase().trim())
+    );
+
+    // הוספת הפריטים החדשים אחד אחר השני עם השהיה קטנה לחוויה טובה יותר
+    for (const item of itemsToAdd) {
       onAdd(item);
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     
     setBulkItems("");
     setIsProcessing(false);
+    
+    // הצגת הודעות על פריטים שנוספו וכפילויות שדולגו
+    if (itemsToAdd.length > 0) {
+      toast({
+        title: "פריטים נוספו בהצלחה",
+        description: `${itemsToAdd.length} פריטים נוספו לרשימה`,
+      });
+    }
+    
+    if (duplicates.length > 0) {
+      const duplicateNames = duplicates.map(item => item.name).join(', ');
+      toast({
+        title: "פריטים כפולים דולגו",
+        description: `הפריטים הבאים כבר קיימים ברשימה: ${duplicateNames}`,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
