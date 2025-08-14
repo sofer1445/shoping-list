@@ -160,3 +160,5 @@ export const SharedLists = () => {
     </div>
   );
 };
+
+export default SharedLists;

@@ -309,3 +309,5 @@ export const ArchivedLists = () => {
     </div>
   );
 };
+
+export default ArchivedLists;

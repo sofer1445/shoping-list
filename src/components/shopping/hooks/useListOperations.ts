@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useActivityLog } from "@/hooks/useActivityLog";
 
-export const useListOperations = (user: any) => {
+import { User } from "@supabase/supabase-js";
+
+export const useListOperations = (user: User | null) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { logActivity } = useActivityLog();
@@ -42,10 +44,9 @@ export const useListOperations = (user: any) => {
         });
         return newList.id;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Detailed error in createNewList:", {
         error,
-        stack: error.stack,
         context: { userId: user?.id }
       });
       toast({
@@ -86,10 +87,9 @@ export const useListOperations = (user: any) => {
 
       console.log("Fetch existing list result:", existingList);
       return existingList?.id || null;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Detailed error in fetchExistingList:", {
         error,
-        stack: error.stack,
         context: { userId: user?.id }
       });
       return null;

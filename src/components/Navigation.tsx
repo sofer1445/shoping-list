@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 import { Button } from "./ui/button";
+import { ThemeToggle } from "./ThemeToggle";
 
 export const Navigation = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -50,11 +51,11 @@ export const Navigation = () => {
         // נווט לדף ההתחברות
         navigate("/auth", { replace: true });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Unexpected logout error:", error);
       toast({
         title: "שגיאה בהתנתקות",
-        description: error.message || "אירעה שגיאה לא צפויה",
+        description: error instanceof Error ? error.message : "אירעה שגיאה לא צפויה",
         variant: "destructive",
       });
     }
@@ -63,20 +64,33 @@ export const Navigation = () => {
   if (!user) return null;
 
   return (
-    <nav className="bg-white shadow-sm">
+    <nav 
+      className="bg-white dark:bg-gray-900 shadow-sm border-b dark:border-gray-800"
+      role="navigation"
+      aria-label="Main navigation"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <div className="flex items-center">
-            <span className="text-gray-700">{user.email}</span>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Button
+              onClick={handleLogout}
+              variant="destructive"
+              className="inline-flex items-center"
+              aria-label="התנתק מהמערכת"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              התנתק
+            </Button>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="destructive"
-            className="inline-flex items-center"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            התנתק
-          </Button>
+          <div className="flex items-center">
+            <span 
+              className="text-gray-700 dark:text-gray-300 text-sm"
+              aria-label={`משתמש מחובר: ${user.email}`}
+            >
+              {user.email}
+            </span>
+          </div>
         </div>
       </div>
     </nav>

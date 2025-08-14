@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!session && location.pathname !== '/auth') {
           navigate('/auth', { replace: true });
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error getting session:", error);
         // Clear any stale session data
         setUser(null);

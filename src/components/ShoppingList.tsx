@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
 import { SmartSearch } from "./shopping/SmartSearch";
@@ -7,11 +7,8 @@ import { AddItemForm } from "./shopping/AddItemForm";
 import { FilterButtons } from "./shopping/FilterButtons";
 import { SortableItem } from "./shopping/SortableItem";
 import { EditItemDialog } from "./shopping/EditItemDialog";
-import { ArchivedLists } from "./shopping/ArchivedLists";
-import { SharedLists } from "./shopping/SharedLists";
 import { ArchiveButton } from "./shopping/ArchiveButton";
 import { ShareListDialog } from "./shopping/ShareListDialog";
-import { Statistics } from "./shopping/Statistics";
 import { SmartRecommendations } from "./shopping/SmartRecommendations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useShoppingList } from "./shopping/hooks/useShoppingList";
@@ -20,6 +17,17 @@ import { ShoppingItem } from "./shopping/types";
 import { useSearchParams } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { AlertCircle, CloudOff, BarChart3 } from "lucide-react";
+
+// Lazy load heavy components
+const ArchivedLists = lazy(() => import("./shopping/ArchivedLists"));
+const SharedLists = lazy(() => import("./shopping/SharedLists"));
+const Statistics = lazy(() => import("./shopping/Statistics"));
+
+const TabLoadingSpinner = () => (
+  <div className="flex items-center justify-center py-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
@@ -78,10 +86,10 @@ export const ShoppingList = () => {
     })
   );
 
-  const handleDragEnd = async (event: any) => {
+  const handleDragEnd = async (event: { active: { id: string }; over: { id: string } | null }) => {
     const { active, over } = event;
 
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       setItems((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
@@ -209,44 +217,72 @@ export const ShoppingList = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-white">
-      <div className="sticky top-0 bg-white z-40 border-b border-gray-100 p-3">
+    <div className="max-w-md mx-auto min-h-screen bg-white dark:bg-gray-900 transition-colors">
+      <div className="sticky top-0 bg-white dark:bg-gray-900 z-40 border-b border-gray-100 dark:border-gray-800 p-3">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full">
-            <TabsTrigger value="current" className="flex-1 text-xs">רשימה נוכחית</TabsTrigger>
-            <TabsTrigger value="statistics" className="flex-1 text-xs">
+            <TabsTrigger 
+              value="current" 
+              className="flex-1 text-xs"
+              aria-label="רשימה נוכחית"
+            >
+              רשימה נוכחית
+            </TabsTrigger>
+            <TabsTrigger 
+              value="statistics" 
+              className="flex-1 text-xs"
+              aria-label="נתונים וסטטיסטיקות"
+            >
               <BarChart3 className="h-3 w-3 ml-1" />
               נתונים
             </TabsTrigger>
-            <TabsTrigger value="shared" className="flex-1 text-xs">משותפות</TabsTrigger>
-            <TabsTrigger value="archived" className="flex-1 text-xs">ארכיון</TabsTrigger>
+            <TabsTrigger 
+              value="shared" 
+              className="flex-1 text-xs"
+              aria-label="רשימות משותפות"
+            >
+              משותפות
+            </TabsTrigger>
+            <TabsTrigger 
+              value="archived" 
+              className="flex-1 text-xs"
+              aria-label="רשימות בארכיון"
+            >
+              ארכיון
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      <div className="pb-4">
+      <main className="pb-4" role="main">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsContent value="current" className="mt-0">
+          <TabsContent value="current" className="mt-0" role="tabpanel">
             {currentListId && !searchParams.get("list") && renderShoppingList(false)}
           </TabsContent>
 
-          <TabsContent value="statistics" className="mt-0">
-            <Statistics items={items} />
+          <TabsContent value="statistics" className="mt-0" role="tabpanel">
+            <Suspense fallback={<TabLoadingSpinner />}>
+              <Statistics items={items} />
+            </Suspense>
           </TabsContent>
 
-          <TabsContent value="shared" className="mt-0 px-3">
+          <TabsContent value="shared" className="mt-0 px-3" role="tabpanel">
             {searchParams.get("list") ? (
               renderShoppingList(true)
             ) : (
-              <SharedLists />
+              <Suspense fallback={<TabLoadingSpinner />}>
+                <SharedLists />
+              </Suspense>
             )}
           </TabsContent>
 
-          <TabsContent value="archived" className="mt-0 px-3">
-            <ArchivedLists />
+          <TabsContent value="archived" className="mt-0 px-3" role="tabpanel">
+            <Suspense fallback={<TabLoadingSpinner />}>
+              <ArchivedLists />
+            </Suspense>
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
     </div>
   );
 };

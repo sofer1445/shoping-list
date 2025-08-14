@@ -180,3 +180,5 @@ export const Statistics = ({ items }: StatisticsProps) => {
     </div>
   );
 };
+
+export default Statistics;

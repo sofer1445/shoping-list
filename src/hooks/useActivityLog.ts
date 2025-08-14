@@ -10,7 +10,7 @@ export const useActivityLog = () => {
 
   const logActivity = useCallback(async (
     activityType: ActivityType,
-    details: Record<string, any> = {}
+    details: Record<string, unknown> = {}
   ) => {
     try {
       const { error } = await supabase.rpc(

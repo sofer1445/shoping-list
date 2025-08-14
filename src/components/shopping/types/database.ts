@@ -49,7 +49,7 @@ export interface UserActivity {
   user_id: string;
   activity_type: ActivityType;
   timestamp: string;
-  details: Record<string, any> | null;
+  details: Record<string, unknown> | null;
 }
 
 export interface UserDailyActivity {

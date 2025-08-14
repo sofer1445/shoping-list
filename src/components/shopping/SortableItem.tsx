@@ -1,4 +1,5 @@
 
+import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Trash2, Edit, Check, GripVertical } from "lucide-react";
@@ -14,7 +15,7 @@ interface SortableItemProps {
   onEdit: (id: string) => void;
 }
 
-export const SortableItem = ({
+export const SortableItem = React.memo(({
   item,
   onDelete,
   onToggle,
@@ -99,4 +100,6 @@ export const SortableItem = ({
       </div>
     </div>
   );
-};
+});
+
+SortableItem.displayName = "SortableItem";
