@@ -276,32 +276,18 @@ export type Database = {
       }
     }
     Views: {
-      user_daily_activity: {
-        Row: {
-          activity_count: number | null
-          activity_type: Database["public"]["Enums"]["activity_type"] | null
-          day: string | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_activity_log_user"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_activity_log_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_user_daily_activity: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          activity_count: number
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          day: string
+          user_id: string
+        }[]
+      }
       log_user_activity: {
         Args: {
           _activity_type: Database["public"]["Enums"]["activity_type"]
