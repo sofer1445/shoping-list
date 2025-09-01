@@ -235,6 +235,36 @@ export type Database = {
           },
         ]
       }
+      shopping_predictions: {
+        Row: {
+          confidence_score: number
+          created_at: string
+          id: string
+          predicted_items: Json
+          prediction_date: string
+          prediction_period: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number
+          created_at?: string
+          id?: string
+          predicted_items: Json
+          prediction_date?: string
+          prediction_period: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number
+          created_at?: string
+          id?: string
+          predicted_items?: Json
+          prediction_date?: string
+          prediction_period?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_activity_log: {
         Row: {
           activity_type: Database["public"]["Enums"]["activity_type"]
@@ -274,6 +304,78 @@ export type Database = {
           },
         ]
       }
+      user_product_analytics: {
+        Row: {
+          average_quantity: number
+          category: string
+          created_at: string
+          id: string
+          last_purchased_at: string | null
+          product_name: string
+          purchase_frequency_days: number | null
+          seasonal_pattern: Json | null
+          total_purchases: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          average_quantity?: number
+          category: string
+          created_at?: string
+          id?: string
+          last_purchased_at?: string | null
+          product_name: string
+          purchase_frequency_days?: number | null
+          seasonal_pattern?: Json | null
+          total_purchases?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          average_quantity?: number
+          category?: string
+          created_at?: string
+          id?: string
+          last_purchased_at?: string | null
+          product_name?: string
+          purchase_frequency_days?: number | null
+          seasonal_pattern?: Json | null
+          total_purchases?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_shopping_patterns: {
+        Row: {
+          created_at: string
+          id: string
+          insights: Json | null
+          pattern_data: Json
+          pattern_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          insights?: Json | null
+          pattern_data: Json
+          pattern_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          insights?: Json | null
+          pattern_data?: Json
+          pattern_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -293,6 +395,10 @@ export type Database = {
           _activity_type: Database["public"]["Enums"]["activity_type"]
           _details?: Json
         }
+        Returns: undefined
+      }
+      trigger_analytics_processing: {
+        Args: { _user_id?: string }
         Returns: undefined
       }
     }

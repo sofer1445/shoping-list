@@ -13,6 +13,7 @@ import { ArchiveButton } from "./shopping/ArchiveButton";
 import { ShareListDialog } from "./shopping/ShareListDialog";
 import { Statistics } from "./shopping/Statistics";
 import { SmartRecommendations } from "./shopping/SmartRecommendations";
+import AnalyticsAgent from "./analytics/AnalyticsAgent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useShoppingList } from "./shopping/hooks/useShoppingList";
 import { useShoppingItems } from "./shopping/hooks/useShoppingItems";
@@ -212,14 +213,12 @@ export const ShoppingList = () => {
     <div className="max-w-md mx-auto min-h-screen bg-white">
       <div className="sticky top-0 bg-white z-40 border-b border-gray-100 p-3">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full">
-            <TabsTrigger value="current" className="flex-1 text-xs">רשימה נוכחית</TabsTrigger>
-            <TabsTrigger value="statistics" className="flex-1 text-xs">
-              <BarChart3 className="h-3 w-3 ml-1" />
-              נתונים
-            </TabsTrigger>
-            <TabsTrigger value="shared" className="flex-1 text-xs">משותפות</TabsTrigger>
-            <TabsTrigger value="archived" className="flex-1 text-xs">ארכיון</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="current" className="text-xs">רשימה</TabsTrigger>
+            <TabsTrigger value="statistics" className="text-xs">נתונים</TabsTrigger>
+            <TabsTrigger value="analytics" className="text-xs">AI</TabsTrigger>
+            <TabsTrigger value="shared" className="text-xs">משותפות</TabsTrigger>
+            <TabsTrigger value="archived" className="text-xs">ארכיון</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -232,6 +231,10 @@ export const ShoppingList = () => {
 
           <TabsContent value="statistics" className="mt-0">
             <Statistics items={items} />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-0 px-3">
+            <AnalyticsAgent />
           </TabsContent>
 
           <TabsContent value="shared" className="mt-0 px-3">
