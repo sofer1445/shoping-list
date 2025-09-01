@@ -47,24 +47,23 @@ serve(async (req) => {
 
     console.log(`Starting analytics processing for user: ${user_id}`);
     
-    // Fetch all archived items for the user
-    const { data: archivedItems, error: itemsError } = await supabase
+    // Fetch ALL items for the user (not just archived)
+    const { data: allItems, error: itemsError } = await supabase
       .from('shopping_items')
       .select('*')
       .eq('created_by', user_id)
-      .eq('archived', true)
       .order('created_at', { ascending: true });
 
     if (itemsError) {
-      console.error('Error fetching archived items:', itemsError);
+      console.error('Error fetching items:', itemsError);
       throw itemsError;
     }
 
-    console.log(`Found ${archivedItems?.length || 0} archived items`);
+    console.log(`Found ${allItems?.length || 0} total items for analysis`);
 
-    if (!archivedItems || archivedItems.length === 0) {
+    if (!allItems || allItems.length === 0) {
       return new Response(
-        JSON.stringify({ message: 'No archived items found for analysis' }),
+        JSON.stringify({ message: 'No items found for analysis' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -72,10 +71,10 @@ serve(async (req) => {
     // Process product analytics
     const productStats = new Map<string, {
       category: string;
-      purchases: Array<{ quantity: number; date: string }>;
+      purchases: Array<{ quantity: number; date: string; completed: boolean }>;
     }>();
 
-    archivedItems.forEach((item: ShoppingItem) => {
+    allItems.forEach((item: ShoppingItem) => {
       const key = item.name.toLowerCase();
       if (!productStats.has(key)) {
         productStats.set(key, {
@@ -85,7 +84,8 @@ serve(async (req) => {
       }
       productStats.get(key)!.purchases.push({
         quantity: item.quantity,
-        date: item.created_at
+        date: item.created_at,
+        completed: item.completed
       });
     });
 
