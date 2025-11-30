@@ -122,14 +122,6 @@ export const ShoppingList = () => {
         <div className="flex gap-2">
           {!isSharedList && (
             <>
-              <ExportToNewListButton 
-                listId={currentListId!} 
-                items={items}
-                onExport={(newListId) => {
-                  setCurrentListId(newListId);
-                  fetchItems();
-                }} 
-              />
               <ArchiveButton listId={currentListId!} onArchive={() => setCurrentListId(null)} />
               <ShareListDialog listId={currentListId!} />
             </>
@@ -158,8 +150,19 @@ export const ShoppingList = () => {
         />
       </div>
 
-      <div className="px-1">
+      <div className="px-1 space-y-3">
         <FilterButtons filter={filter} onFilterChange={setFilter} />
+        
+        {filter === "active" && !isSharedList && items.some(item => !item.completed) && (
+          <ExportToNewListButton 
+            listId={currentListId!} 
+            items={items}
+            onExport={(newListId) => {
+              setCurrentListId(newListId);
+              fetchItems();
+            }} 
+          />
+        )}
       </div>
 
       <DndContext
