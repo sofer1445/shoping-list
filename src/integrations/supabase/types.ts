@@ -382,7 +382,7 @@ export type Database = {
     }
     Functions: {
       get_user_daily_activity: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           activity_count: number
           activity_type: Database["public"]["Enums"]["activity_type"]

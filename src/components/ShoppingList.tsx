@@ -11,6 +11,7 @@ import { ArchivedLists } from "./shopping/ArchivedLists";
 import { SharedLists } from "./shopping/SharedLists";
 import { ArchiveButton } from "./shopping/ArchiveButton";
 import { ShareListDialog } from "./shopping/ShareListDialog";
+import { ExportToNewListButton } from "./shopping/ExportToNewListButton";
 import { Statistics } from "./shopping/Statistics";
 import { SmartRecommendations } from "./shopping/SmartRecommendations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -121,6 +122,14 @@ export const ShoppingList = () => {
         <div className="flex gap-2">
           {!isSharedList && (
             <>
+              <ExportToNewListButton 
+                listId={currentListId!} 
+                items={items}
+                onExport={(newListId) => {
+                  setCurrentListId(newListId);
+                  fetchItems();
+                }} 
+              />
               <ArchiveButton listId={currentListId!} onArchive={() => setCurrentListId(null)} />
               <ShareListDialog listId={currentListId!} />
             </>
