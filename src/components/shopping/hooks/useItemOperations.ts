@@ -13,8 +13,23 @@ export const useItemOperations = (
   const { user } = useAuth();
   const { logActivity } = useActivityLog();
 
-  const addItem = async (newItem: Omit<ShoppingItem, "id" | "completed" | "isNew">) => {
+  const addItem = async (newItem: Omit<ShoppingItem, "id" | "completed" | "isNew">, existingItems?: ShoppingItem[]) => {
     if (!currentListId || !user) return;
+
+    // Check for duplicates
+    if (existingItems) {
+      const duplicate = existingItems.find(
+        item => item.name.trim().toLowerCase() === newItem.name.trim().toLowerCase() && !item.completed
+      );
+      if (duplicate) {
+        toast({
+          title: "פריט כבר קיים",
+          description: `"${newItem.name}" כבר נמצא ברשימה`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     
     try {
       const { data, error } = await supabase
