@@ -1,21 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ShoppingItem } from './types';
-import { Bot, TrendingUp, Calendar, Target, BarChart3, ShoppingCart } from 'lucide-react';
-
-interface Prediction {
-  product_name: string;
-  category: string;
-  confidence: number;
-  predicted_quantity: number;
-  reason: string;
-}
+import { Bot, TrendingUp, Target, ShoppingCart, Sparkles, Package, CheckCircle2, PieChart as PieIcon, BarChart3 } from 'lucide-react';
 
 interface AnalyticsData {
   analytics: Array<{
@@ -42,21 +33,20 @@ interface StatisticsProps {
   items: ShoppingItem[];
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 export const Statistics: React.FC<StatisticsProps> = ({ items }) => {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
 
   const statistics = useMemo(() => {
     const totalItems = items.length;
     const completedItems = items.filter(item => item.completed).length;
+    const activeItems = totalItems - completedItems;
     const completionRate = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
-    // Category distribution
     const categoryData: { [key: string]: number } = {};
     items.forEach(item => {
       categoryData[item.category] = (categoryData[item.category] || 0) + 1;
@@ -68,18 +58,6 @@ export const Statistics: React.FC<StatisticsProps> = ({ items }) => {
       percentage: Math.round((count / totalItems) * 100)
     }));
 
-    // Daily activity (static example data)
-    const dailyData = [
-      { day: 'א', items: 8 },
-      { day: 'ב', items: 12 },
-      { day: 'ג', items: 15 },
-      { day: 'ד', items: 10 },
-      { day: 'ה', items: 7 },
-      { day: 'ו', items: 14 },
-      { day: 'ש', items: 9 }
-    ];
-
-    // Top items by usage
     const itemCounts: { [key: string]: number } = {};
     items.forEach(item => {
       itemCounts[item.name] = (itemCounts[item.name] || 0) + 1;
@@ -90,14 +68,7 @@ export const Statistics: React.FC<StatisticsProps> = ({ items }) => {
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
 
-    return {
-      totalItems,
-      completedItems,
-      completionRate,
-      pieData,
-      dailyData,
-      topItems
-    };
+    return { totalItems, completedItems, activeItems, completionRate, pieData, topItems };
   }, [items]);
 
   const runAnalyticsAgent = async () => {
@@ -118,7 +89,6 @@ export const Statistics: React.FC<StatisticsProps> = ({ items }) => {
       });
 
       await loadAnalyticsData();
-      setShowAIAnalysis(true);
     } catch (error) {
       console.error('Error running analytics:', error);
       toast({
@@ -163,283 +133,254 @@ export const Statistics: React.FC<StatisticsProps> = ({ items }) => {
     loadAnalyticsData();
   }, []);
 
+  const hasPredictions = analyticsData?.predictions && analyticsData.predictions.length > 0 && analyticsData.predictions[0]?.predicted_items;
+  const hasAnalytics = analyticsData?.analytics && analyticsData.analytics.length > 0;
+  const hasPatterns = analyticsData?.patterns && analyticsData.patterns.length > 0;
+
   return (
-    <div className="space-y-6 p-4">
-      {/* Header with AI Toggle */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              סטטיסטיקות וניתוח חכם
-            </span>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowAIAnalysis(!showAIAnalysis)}
-            >
-              {showAIAnalysis ? 'נתונים בסיסיים' : 'ניתוח AI'}
-            </Button>
-          </CardTitle>
-          <CardDescription>
-            {showAIAnalysis ? 'ניתוח אינטליגנטי של הרגלי הקנייה שלך' : 'סטטיסטיקות כלליות על רשימת הקניות'}
-          </CardDescription>
-        </CardHeader>
+    <div className="space-y-4 p-3" dir="rtl">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-primary/10 rounded-2xl p-3 text-center">
+          <ShoppingCart className="h-5 w-5 mx-auto mb-1 text-primary" />
+          <div className="text-2xl font-bold text-primary">{statistics.totalItems}</div>
+          <div className="text-[10px] text-muted-foreground font-medium">סה״כ</div>
+        </div>
+        <div className="bg-green-500/10 rounded-2xl p-3 text-center">
+          <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-green-600" />
+          <div className="text-2xl font-bold text-green-600">{statistics.completedItems}</div>
+          <div className="text-[10px] text-muted-foreground font-medium">הושלמו</div>
+        </div>
+        <div className="bg-amber-500/10 rounded-2xl p-3 text-center">
+          <Package className="h-5 w-5 mx-auto mb-1 text-amber-600" />
+          <div className="text-2xl font-bold text-amber-600">{statistics.activeItems}</div>
+          <div className="text-[10px] text-muted-foreground font-medium">פעילים</div>
+        </div>
+      </div>
+
+      {/* Completion Progress */}
+      <Card className="border-0 shadow-sm bg-gradient-to-l from-primary/5 to-transparent">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-muted-foreground">התקדמות</span>
+            <span className="text-sm font-bold text-primary">{Math.round(statistics.completionRate)}%</span>
+          </div>
+          <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-l from-primary to-primary/70 rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${statistics.completionRate}%` }}
+            />
+          </div>
+        </CardContent>
       </Card>
 
-      {showAIAnalysis ? (
-        /* AI Analysis Section */
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5" />
-                סוכן ניתוח אינטליגנטי
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={runAnalyticsAgent}
-                disabled={isProcessing}
-                className="w-full"
-              >
-                {isProcessing ? (
-                  <>
-                    <Bot className="h-4 w-4 mr-2 animate-spin" />
-                    מעבד נתונים...
-                  </>
-                ) : (
-                  <>
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    הפעל ניתוח מלא
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {isLoading ? (
-            <Card>
-              <CardContent className="flex items-center justify-center py-8">
-                <Bot className="h-8 w-8 animate-spin mr-2" />
-                טוען נתוני ניתוח...
-              </CardContent>
-            </Card>
-          ) : analyticsData ? (
-            <>
-              {/* Predictions */}
-              {analyticsData.predictions.length > 0 && analyticsData.predictions[0]?.predicted_items && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Target className="h-5 w-5" />
-                      תחזיות קנייה חכמות
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {Array.isArray(analyticsData.predictions[0].predicted_items) ? 
-                        analyticsData.predictions[0].predicted_items.slice(0, 5).map((prediction: any, index: number) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                            <div className="flex-1">
-                              <div className="font-medium">{prediction.product_name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {prediction.category} • כמות צפויה: {prediction.predicted_quantity}
-                              </div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {prediction.reason}
-                              </div>
-                            </div>
-                            <Badge variant={prediction.confidence > 0.7 ? "default" : "secondary"}>
-                              {Math.round(prediction.confidence * 100)}% ביטחון
-                            </Badge>
-                          </div>
-                        )) : (
-                          <p className="text-muted-foreground">אין תחזיות זמינות</p>
-                        )
-                      }
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Product Analytics */}
-              {analyticsData.analytics.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      סטטיסטיקות מוצרים חכמות
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {analyticsData.analytics.slice(0, 10).map((product, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                          <div>
-                            <div className="font-medium">{product.product_name}</div>
-                            <div className="text-sm text-muted-foreground">{product.category}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-medium">{product.total_purchases} קניות</div>
-                            <div className="text-sm text-muted-foreground">
-                              כמות ממוצעת: {product.average_quantity}
-                            </div>
-                            {product.purchase_frequency_days && (
-                              <div className="text-xs text-muted-foreground">
-                                כל {Math.round(product.purchase_frequency_days)} ימים
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Shopping Patterns */}
-              {analyticsData.patterns.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      תבניות קנייה
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {analyticsData.patterns.map((pattern, index) => (
-                        <div key={index} className="p-4 bg-muted/50 rounded-lg">
-                          <div className="font-medium mb-2 capitalize">
-                            ניתוח {pattern.pattern_type === 'weekly' ? 'תדירות' : pattern.pattern_type === 'category' ? 'קטגוריות' : pattern.pattern_type}
-                          </div>
-                          {pattern.insights && Array.isArray(pattern.insights) && pattern.insights.length > 0 && (
-                            <ul className="space-y-1">
-                              {pattern.insights.map((insight: string, i: number) => (
-                                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                  <span className="text-primary">•</span>
-                                  {insight}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          ) : (
-            <Card>
-              <CardContent className="text-center py-8">
-                <Bot className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="font-medium mb-2">אין נתוני ניתוח עדיין</h3>
-                <p className="text-muted-foreground mb-4">
-                  הפעל את הסוכן החכם כדי לקבל תחזיות ותובנות על הרגלי הקנייה שלך
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      ) : (
-        /* Basic Statistics Section */
-        <>
-          {/* Overview Cards */}
-          <div className="grid grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">סה״כ פריטים</span>
-                </div>
-                <div className="text-2xl font-bold">{statistics.totalItems}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">אחוז השלמה</span>
-                </div>
-                <div className="text-2xl font-bold">{Math.round(statistics.completionRate)}%</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Category Distribution */}
-          {statistics.pieData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>התפלגות לפי קטגוריות</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={statistics.pieData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percentage }) => `${name} ${percentage}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {statistics.pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Daily Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle>פעילות שבועית</CardTitle>
-              <CardDescription>כמות פריטים שנוספו ביום (נתונים לדוגמה)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={statistics.dailyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="items" fill="#8884d8" />
-                </BarChart>
+      {/* Category Distribution */}
+      {statistics.pieData.length > 0 && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <PieIcon className="h-4 w-4 text-primary" />
+              התפלגות קטגוריות
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="flex items-center gap-4">
+              <ResponsiveContainer width={120} height={120}>
+                <PieChart>
+                  <Pie
+                    data={statistics.pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={30}
+                    outerRadius={55}
+                    paddingAngle={3}
+                    dataKey="value"
+                    strokeWidth={0}
+                  >
+                    {statistics.pieData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Top Items */}
-          {statistics.topItems.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  פריטים פופולריים
-                </CardTitle>
-                <CardDescription>המוצרים שמופיעים הכי הרבה ברשימות</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {statistics.topItems.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                      <span>{item.name}</span>
-                      <span className="font-medium">{item.count} פעמים</span>
+              <div className="flex-1 space-y-1.5">
+                {statistics.pieData.map((entry, index) => (
+                  <div key={entry.name} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                      <span className="text-muted-foreground">{entry.name}</span>
                     </div>
-                  ))}
+                    <span className="font-semibold">{entry.percentage}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Top Items */}
+      {statistics.topItems.length > 0 && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              פריטים פופולריים
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 space-y-1.5">
+            {statistics.topItems.map((item, index) => {
+              const maxCount = statistics.topItems[0].count;
+              const width = (item.count / maxCount) * 100;
+              return (
+                <div key={index} className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-4 text-center font-bold">{index + 1}</span>
+                  <div className="flex-1 relative">
+                    <div className="h-7 bg-muted/50 rounded-lg overflow-hidden">
+                      <div 
+                        className="h-full bg-primary/15 rounded-lg transition-all duration-500"
+                        style={{ width: `${width}%` }}
+                      />
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-between px-2.5">
+                      <span className="text-xs font-medium">{item.name}</span>
+                      <span className="text-[10px] text-muted-foreground font-semibold">{item.count}×</span>
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Analysis Section */}
+      <Card className="border-0 shadow-sm bg-gradient-to-l from-violet-500/5 to-transparent">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-violet-500/15 flex items-center justify-center">
+              <Sparkles className="h-4 w-4 text-violet-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold">ניתוח חכם</h3>
+              <p className="text-[10px] text-muted-foreground">תחזיות ותובנות על הרגלי הקנייה</p>
+            </div>
+          </div>
+          <Button 
+            onClick={runAnalyticsAgent}
+            disabled={isProcessing}
+            size="sm"
+            className="w-full rounded-xl"
+          >
+            {isProcessing ? (
+              <>
+                <Bot className="h-4 w-4 animate-spin" />
+                מנתח נתונים...
+              </>
+            ) : (
+              <>
+                <BarChart3 className="h-4 w-4" />
+                הפעל ניתוח
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center py-8 gap-2">
+          <Bot className="h-8 w-8 animate-spin text-primary" />
+          <span className="text-sm text-muted-foreground">טוען נתוני ניתוח...</span>
+        </div>
+      )}
+
+      {/* Predictions */}
+      {hasPredictions && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              תחזיות קנייה
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 space-y-2">
+            {Array.isArray(analyticsData!.predictions[0].predicted_items) ? 
+              analyticsData!.predictions[0].predicted_items.slice(0, 5).map((prediction: any, index: number) => (
+                <div key={index} className="flex items-center gap-3 p-2.5 bg-muted/30 rounded-xl">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{prediction.product_name}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {prediction.category} • כמות: {prediction.predicted_quantity}
+                    </div>
+                  </div>
+                  <Badge 
+                    variant={prediction.confidence > 0.7 ? "default" : "secondary"}
+                    className="text-[10px] shrink-0 rounded-lg"
+                  >
+                    {Math.round(prediction.confidence * 100)}%
+                  </Badge>
+                </div>
+              )) : null
+            }
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Product Analytics */}
+      {hasAnalytics && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              סטטיסטיקות מוצרים
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 space-y-2">
+            {analyticsData!.analytics.slice(0, 8).map((product, index) => (
+              <div key={index} className="flex items-center justify-between p-2.5 bg-muted/30 rounded-xl">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{product.product_name}</div>
+                  <div className="text-[10px] text-muted-foreground">{product.category}</div>
+                </div>
+                <div className="text-left shrink-0">
+                  <div className="text-sm font-bold">{product.total_purchases}×</div>
+                  {product.purchase_frequency_days && (
+                    <div className="text-[10px] text-muted-foreground">
+                      כל {Math.round(product.purchase_frequency_days)} ימים
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Shopping Patterns */}
+      {hasPatterns && (
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              תבניות קנייה
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 space-y-2">
+            {analyticsData!.patterns.map((pattern, index) => (
+              <div key={index} className="p-3 bg-muted/30 rounded-xl">
+                <div className="text-xs font-semibold mb-1.5">
+                  {pattern.pattern_type === 'weekly' ? 'תדירות' : pattern.pattern_type === 'category' ? 'קטגוריות' : pattern.pattern_type}
+                </div>
+                {pattern.insights && Array.isArray(pattern.insights) && pattern.insights.map((insight: string, i: number) => (
+                  <p key={i} className="text-[11px] text-muted-foreground leading-relaxed flex items-start gap-1.5">
+                    <span className="text-primary mt-0.5">•</span>
+                    {insight}
+                  </p>
+                ))}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       )}
     </div>
   );
