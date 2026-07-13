@@ -14,13 +14,13 @@ import { ShareListDialog } from "./shopping/ShareListDialog";
 import { ExportToNewListButton } from "./shopping/ExportToNewListButton";
 import { Statistics } from "./shopping/Statistics";
 import { SmartRecommendations } from "./shopping/SmartRecommendations";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { BottomNav, type TabKey } from "./BottomNav";
 import { useShoppingList } from "./shopping/hooks/useShoppingList";
 import { useShoppingItems } from "./shopping/hooks/useShoppingItems";
 import { ShoppingItem } from "./shopping/types";
 import { useSearchParams } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { AlertCircle, CloudOff, BarChart3 } from "lucide-react";
+import { AlertCircle, CloudOff } from "lucide-react";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
@@ -30,7 +30,8 @@ export const ShoppingList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
-  const [activeTab, setActiveTab] = useState("current");
+  const [activeTab, setActiveTab] = useState<TabKey>("current");
+
 
   const {
     items,
@@ -221,41 +222,27 @@ export const ShoppingList = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-white">
-      <div className="sticky top-0 bg-white z-40 border-b border-gray-100 p-3">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="current" className="text-xs">רשימה</TabsTrigger>
-            <TabsTrigger value="statistics" className="text-xs">נתונים</TabsTrigger>
-            <TabsTrigger value="shared" className="text-xs">משותפות</TabsTrigger>
-            <TabsTrigger value="archived" className="text-xs">ארכיון</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+    <div className="app-shell pb-[calc(var(--nav-height)+16px)]">
+      <div className="pt-3 animate-fadeIn">
+        {activeTab === "current" && currentListId && !searchParams.get("list") && renderShoppingList(false)}
 
-      <div className="pb-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsContent value="current" className="mt-0">
-            {currentListId && !searchParams.get("list") && renderShoppingList(false)}
-          </TabsContent>
+        {activeTab === "statistics" && <Statistics items={items} />}
 
-          <TabsContent value="statistics" className="mt-0">
-            <Statistics items={items} />
-          </TabsContent>
+        {activeTab === "shared" && (
+          <div className="px-3">
+            {searchParams.get("list") ? renderShoppingList(true) : <SharedLists />}
+          </div>
+        )}
 
-          <TabsContent value="shared" className="mt-0 px-3">
-            {searchParams.get("list") ? (
-              renderShoppingList(true)
-            ) : (
-              <SharedLists />
-            )}
-          </TabsContent>
-
-          <TabsContent value="archived" className="mt-0 px-3">
+        {activeTab === "archived" && (
+          <div className="px-3">
             <ArchivedLists />
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
+
+      <BottomNav value={activeTab} onChange={setActiveTab} />
     </div>
   );
 };
+

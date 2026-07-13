@@ -4,47 +4,124 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.75rem;
+    /* Cloud White palette (HSL) */
+    --background: 210 20% 99%;          /* #fafbfc */
+    --foreground: 222 25% 12%;
+
+    --surface: 0 0% 100%;
+    --surface-muted: 214 30% 96%;       /* ~#e8ecf1 */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 25% 12%;
+
+    --primary: 217 91% 60%;             /* #3b82f6 */
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 217 91% 96%;
+
+    --secondary: 214 30% 96%;
+    --secondary-foreground: 222 25% 15%;
+
+    --muted: 214 25% 94%;
+    --muted-foreground: 215 16% 47%;    /* ~#94a3b8 stronger */
+
+    --accent: 217 91% 96%;
+    --accent-foreground: 217 91% 30%;
+
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --info: 217 91% 60%;
+
+    --border: 214 25% 91%;
+    --input: 214 25% 91%;
+    --ring: 217 91% 60%;
+
+    --radius: 1rem;
+
+    --shadow-xs: 0 1px 2px hsl(222 25% 12% / 0.04);
+    --shadow-sm: 0 2px 8px -2px hsl(222 25% 12% / 0.06);
+    --shadow-md: 0 8px 24px -8px hsl(222 25% 12% / 0.08);
+    --shadow-lg: 0 20px 40px -20px hsl(222 25% 12% / 0.12);
+
+    --nav-height: 68px;
+  }
+
+  .dark {
+    --background: 222 28% 8%;
+    --foreground: 210 20% 96%;
+    --surface: 222 24% 11%;
+    --surface-muted: 222 20% 14%;
+    --card: 222 24% 11%;
+    --card-foreground: 210 20% 96%;
+    --popover: 222 24% 11%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 217 91% 62%;
+    --primary-foreground: 222 28% 8%;
+    --primary-soft: 217 60% 18%;
+    --secondary: 222 20% 16%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 222 20% 16%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 60% 18%;
+    --accent-foreground: 210 20% 96%;
+    --border: 222 20% 20%;
+    --input: 222 20% 20%;
+    --ring: 217 91% 62%;
   }
 
   * {
     @apply border-border;
   }
 
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     direction: rtl;
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'ss01', 'cv11';
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Better mobile tap targets */
-  button, input, select {
-    @apply min-h-[44px];
+  h1, h2, h3, h4, h5, .font-display {
+    font-family: 'Sora', 'Manrope', system-ui, sans-serif;
+    letter-spacing: -0.01em;
   }
 
-  /* Improve form element spacing on mobile */
-  input, select {
-    @apply mb-2;
+  button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Custom scrollbar for better UX */
+@layer components {
+  .app-shell {
+    @apply mx-auto w-full max-w-md min-h-[100dvh] bg-background relative;
+  }
+
+  .surface-card {
+    @apply bg-card rounded-2xl border border-border/60;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .kpi-tile {
+    @apply rounded-2xl p-4 bg-card border border-border/60;
+    box-shadow: var(--shadow-xs);
+  }
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
-
-::-webkit-scrollbar-track {
-  @apply bg-secondary;
-}
-
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  @apply bg-primary/50 rounded-full;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary;
+  @apply bg-border rounded-full;
 }
