@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, ShoppingBasket } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 import { Button } from "./ui/button";
 
@@ -12,73 +12,47 @@ export const Navigation = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
+    supabase.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setUser(s?.user ?? null));
     return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
     try {
-      // נקה קודם את ה-local storage
-      localStorage.removeItem('supabase.auth.token');
-      
-      // נסה להתנתק
       const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error("Logout error:", error);
-        toast({
-          title: "שגיאה בהתנתקות",
-          description: "נסה לרענן את הדף ולהתנתק שוב",
-          variant: "destructive",
-        });
-      } else {
-        // נקה את המצב המקומי
-        setUser(null);
-        
-        toast({
-          title: "התנתקת בהצלחה",
-          description: "להתראות!",
-        });
-        
-        // נווט לדף ההתחברות
-        navigate("/auth", { replace: true });
-      }
+      if (error) throw error;
+      setUser(null);
+      toast({ title: "התנתקת בהצלחה" });
+      navigate("/auth", { replace: true });
     } catch (error: any) {
-      console.error("Unexpected logout error:", error);
-      toast({
-        title: "שגיאה בהתנתקות",
-        description: error.message || "אירעה שגיאה לא צפויה",
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה בהתנתקות", description: error.message, variant: "destructive" });
     }
   };
 
   if (!user) return null;
 
   return (
-    <nav className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          <div className="flex items-center">
-            <span className="text-gray-700">{user.email}</span>
+    <header className="sticky top-0 z-50 bg-background/85 backdrop-blur-xl border-b border-border/60">
+      <div className="mx-auto max-w-md px-4 h-14 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+            <ShoppingBasket className="h-4 w-4 text-primary" strokeWidth={2.25} />
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="destructive"
-            className="inline-flex items-center"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            התנתק
-          </Button>
+          <div className="leading-tight">
+            <div className="font-display font-semibold text-[15px]">סל</div>
+            <div className="text-[10px] text-muted-foreground truncate max-w-[160px]">{user.email}</div>
+          </div>
         </div>
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          size="sm"
+          className="h-9 w-9 p-0 rounded-full text-muted-foreground hover:text-foreground"
+          aria-label="התנתק"
+        >
+          <LogOut className="h-4 w-4" />
+        </Button>
       </div>
-    </nav>
+    </header>
   );
 };
