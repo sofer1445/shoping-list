@@ -14,13 +14,13 @@ import { ShareListDialog } from "./shopping/ShareListDialog";
 import { ExportToNewListButton } from "./shopping/ExportToNewListButton";
 import { Statistics } from "./shopping/Statistics";
 import { SmartRecommendations } from "./shopping/SmartRecommendations";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { BottomNav, type TabKey } from "./BottomNav";
 import { useShoppingList } from "./shopping/hooks/useShoppingList";
 import { useShoppingItems } from "./shopping/hooks/useShoppingItems";
 import { ShoppingItem } from "./shopping/types";
 import { useSearchParams } from "react-router-dom";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { AlertCircle, CloudOff, BarChart3 } from "lucide-react";
+import { AlertCircle, CloudOff } from "lucide-react";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
@@ -30,7 +30,8 @@ export const ShoppingList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
-  const [activeTab, setActiveTab] = useState("current");
+  const [activeTab, setActiveTab] = useState<TabKey>("current");
+
 
   const {
     items,
