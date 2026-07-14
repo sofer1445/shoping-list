@@ -1,13 +1,13 @@
-import { ListChecks, Users, Archive, BarChart3 } from "lucide-react";
+import { ListChecks, ShoppingCart, Clock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type TabKey = "current" | "shared" | "archived" | "statistics";
+export type TabKey = "lists" | "shopping" | "history" | "insights";
 
 const items: { key: TabKey; label: string; icon: typeof ListChecks }[] = [
-  { key: "current", label: "רשימה", icon: ListChecks },
-  { key: "shared", label: "משותפות", icon: Users },
-  { key: "archived", label: "היסטוריה", icon: Archive },
-  { key: "statistics", label: "תובנות", icon: BarChart3 },
+  { key: "lists", label: "הרשימות", icon: ListChecks },
+  { key: "shopping", label: "קניות", icon: ShoppingCart },
+  { key: "history", label: "היסטוריה", icon: Clock },
+  { key: "insights", label: "תובנות", icon: Sparkles },
 ];
 
 interface BottomNavProps {

@@ -1,248 +1,56 @@
-
-import React, { useState, useEffect } from "react";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
-import { SmartSearch } from "./shopping/SmartSearch";
-import { AddItemForm } from "./shopping/AddItemForm";
-import { FilterButtons } from "./shopping/FilterButtons";
-import { SortableItem } from "./shopping/SortableItem";
-import { EditItemDialog } from "./shopping/EditItemDialog";
-import { ArchivedLists } from "./shopping/ArchivedLists";
-import { SharedLists } from "./shopping/SharedLists";
-import { ArchiveButton } from "./shopping/ArchiveButton";
-import { ShareListDialog } from "./shopping/ShareListDialog";
-import { ExportToNewListButton } from "./shopping/ExportToNewListButton";
-import { Statistics } from "./shopping/Statistics";
-import { SmartRecommendations } from "./shopping/SmartRecommendations";
-import { BottomNav, type TabKey } from "./BottomNav";
-import { useShoppingList } from "./shopping/hooks/useShoppingList";
-import { useShoppingItems } from "./shopping/hooks/useShoppingItems";
-import { ShoppingItem } from "./shopping/types";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { AlertCircle, CloudOff } from "lucide-react";
-
-const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
+import { BottomNav, type TabKey } from "./BottomNav";
+import { ListsHome } from "./lists/ListsHome";
+import { ShoppingMode } from "./shopping/ShoppingMode";
+import { HistoryTimeline } from "./history/HistoryTimeline";
+import { InsightsScreen } from "./insights/InsightsScreen";
 
 export const ShoppingList = () => {
-  const [searchParams] = useSearchParams();
-  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>("current");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabKey>("lists");
+  const [activeListId, setActiveListId] = useState<string | null>(null);
 
-
-  const {
-    items,
-    setItems,
-    currentListId,
-    setCurrentListId,
-    fetchItems,
-    isLoading,
-    hasError,
-    isOfflineMode
-  } = useShoppingList();
-
-  const {
-    addItem,
-    toggleItem,
-    deleteItem,
-    handleSaveEdit,
-  } = useShoppingItems(items, setItems, currentListId);
-
+  // Deep-link: /?list=xxx opens Shopping mode on that list
   useEffect(() => {
     const listId = searchParams.get("list");
     if (listId) {
-      setCurrentListId(listId);
-      setActiveTab("shared");
+      setActiveListId(listId);
+      setActiveTab("shopping");
     }
-  }, [searchParams]);
+  }, []);
 
-  // Add event listener for shopping list updates
-  useEffect(() => {
-    const handleListUpdate = () => {
-      if (currentListId) {
-        fetchItems();
-      }
-    };
-
-    window.addEventListener('shopping-list-updated', handleListUpdate);
-    return () => {
-      window.removeEventListener('shopping-list-updated', handleListUpdate);
-    };
-  }, [currentListId, fetchItems]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = async (event: any) => {
-    const { active, over } = event;
-
-    if (active.id !== over.id) {
-      setItems((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
+  const openList = (id: string) => {
+    setActiveListId(id);
+    setActiveTab("shopping");
   };
 
-  const filteredItems = items.filter((item) => {
-    const matchesFilter =
-      filter === "all" ||
-      (filter === "active" && !item.completed) ||
-      (filter === "completed" && item.completed);
-
-    const matchesSearch = item.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-
-    const matchesCategory = selectedCategory === null || item.category === selectedCategory;
-
-    return matchesFilter && matchesSearch && matchesCategory;
-  });
-
-  const renderShoppingList = (isSharedList: boolean = false) => (
-    <div className="space-y-4">
-      {isOfflineMode && (
-        <Alert className="mx-1">
-          <CloudOff className="h-4 w-4" />
-          <AlertTitle>מצב לא מקוון</AlertTitle>
-          <AlertDescription>
-            הנתונים מוצגים ממקור מקומי. חלק מהפעולות עלולות לא לעבוד.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <div className="flex items-center justify-between px-1">
-        <div className="flex gap-2">
-          {!isSharedList && (
-            <>
-              <ArchiveButton listId={currentListId!} onArchive={() => setCurrentListId(null)} />
-              <ShareListDialog listId={currentListId!} />
-            </>
-          )}
-        </div>
-        <h1 className="text-xl font-bold">
-          {isSharedList ? "רשימה משותפת" : "רשימת קניות"}
-        </h1>
-      </div>
-
-      <div className="space-y-4 px-1">
-        <SmartSearch
-          searchQuery={searchQuery}
-          items={items}
-          onSearch={setSearchQuery}
-          onFilterByCategory={setSelectedCategory}
-          selectedCategory={selectedCategory}
-        />
-
-        <AddItemForm onAdd={addItem} categories={categories} items={items} />
-
-        <SmartRecommendations
-          items={items}
-          onAddItem={addItem}
-          categories={categories}
-        />
-      </div>
-
-      <div className="px-1 space-y-3">
-        <FilterButtons filter={filter} onFilterChange={setFilter} />
-        
-        {filter === "active" && !isSharedList && items.some(item => !item.completed) && (
-          <ExportToNewListButton 
-            listId={currentListId!} 
-            items={items}
-            onExport={(newListId) => {
-              setCurrentListId(newListId);
-              fetchItems();
-            }} 
-          />
-        )}
-      </div>
-
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={filteredItems}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-2 px-1">
-            {filteredItems.map((item) => (
-              <SortableItem
-                key={item.id}
-                item={item}
-                onDelete={deleteItem}
-                onToggle={toggleItem}
-                onEdit={() => setEditingItem(item)}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
-
-      <EditItemDialog
-        item={editingItem}
-        isOpen={!!editingItem}
-        onClose={() => setEditingItem(null)}
-        onSave={handleSaveEdit}
-        categories={categories}
-      />
-    </div>
-  );
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (hasError) {
-    return (
-      <div className="max-w-md mx-auto p-4">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>שגיאה</AlertTitle>
-          <AlertDescription>
-            לא ניתן לטעון את רשימת הקניות. אנא נסה שוב מאוחר יותר.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  const backToLists = () => {
+    setActiveTab("lists");
+    // keep activeListId so returning to shopping tab resumes
+    if (searchParams.get("list")) {
+      searchParams.delete("list");
+      setSearchParams(searchParams, { replace: true });
+    }
+  };
 
   return (
     <div className="app-shell pb-[calc(var(--nav-height)+16px)]">
       <div className="pt-3 animate-fadeIn">
-        {activeTab === "current" && currentListId && !searchParams.get("list") && renderShoppingList(false)}
-
-        {activeTab === "statistics" && <Statistics items={items} />}
-
-        {activeTab === "shared" && (
-          <div className="px-3">
-            {searchParams.get("list") ? renderShoppingList(true) : <SharedLists />}
-          </div>
+        {activeTab === "lists" && <ListsHome onOpenList={openList} />}
+        {activeTab === "shopping" && (
+          <ShoppingMode
+            listId={activeListId}
+            onSetListId={setActiveListId}
+            onBackToLists={backToLists}
+            onFinished={() => setActiveTab("history")}
+          />
         )}
-
-        {activeTab === "archived" && (
-          <div className="px-3">
-            <ArchivedLists />
-          </div>
-        )}
+        {activeTab === "history" && <HistoryTimeline onOpenList={openList} />}
+        {activeTab === "insights" && <InsightsScreen />}
       </div>
 
       <BottomNav value={activeTab} onChange={setActiveTab} />
     </div>
   );
 };
-
