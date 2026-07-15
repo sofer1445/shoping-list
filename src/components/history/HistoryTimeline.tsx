@@ -71,9 +71,12 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
   const summary = useMemo(() => {
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 86400000);
+    const monthAgo = new Date(now.getTime() - 30 * 86400000);
     const recentLists = lists.filter((l) => new Date(l.archived_at) >= weekAgo);
+    const monthLists = lists.filter((l) => new Date(l.archived_at) >= monthAgo);
     const items = recentLists.reduce((s, l) => s + l.items.length, 0);
-    return { lists: recentLists.length, items };
+    const avgPerWeek = monthLists.length > 0 ? (monthLists.length / 4).toFixed(1) : "0";
+    return { lists: recentLists.length, items, avgPerWeek };
   }, [lists]);
 
   const buyAgain = async (list: ArchivedList) => {
@@ -143,9 +146,19 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
 
       {lists.length > 0 && (
         <div className="surface-card p-4 bg-gradient-to-l from-primary/5 to-transparent">
-          <div className="text-[11px] text-muted-foreground">השבוע</div>
-          <div className="font-display font-bold text-lg mt-0.5">
-            {summary.items} פריטים · {summary.lists} רשימות
+          <div className="flex items-center justify-between">
+            <div className="text-right">
+              <div className="text-[11px] text-muted-foreground">השבוע</div>
+              <div className="font-display font-bold text-lg mt-0.5">
+                {summary.items} פריטים · {summary.lists} רשימות
+              </div>
+            </div>
+            <div className="text-left">
+              <div className="text-[11px] text-muted-foreground">קצב ממוצע</div>
+              <div className="font-display font-bold text-lg mt-0.5 text-primary">
+                {summary.avgPerWeek}<span className="text-[11px] text-muted-foreground font-normal">/שבוע</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

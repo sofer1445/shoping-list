@@ -238,20 +238,23 @@ export const InsightsScreen = () => {
             </div>
           )}
 
-          {/* Repeat patterns */}
+          {/* Recommended for next shop */}
           {repeatPatterns.length > 0 && (
-            <div className="surface-card p-4">
-              <h2 className="font-display font-semibold text-sm mb-3 text-right flex items-center justify-end gap-2">
-                תבניות קנייה חוזרות
+            <div className="surface-card p-4 bg-gradient-to-bl from-primary/5 to-transparent">
+              <h2 className="font-display font-semibold text-sm mb-1 text-right flex items-center justify-end gap-2">
+                מומלץ לרשימה הבאה
                 <RotateCcw className="h-4 w-4 text-primary" />
               </h2>
+              <p className="text-[11px] text-muted-foreground text-right mb-3">
+                מוצרים שאתה נוהג לקנות באופן קבוע
+              </p>
               <div className="space-y-2">
                 {repeatPatterns.map((p, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between text-xs p-2.5 bg-muted/30 rounded-xl"
+                    className="flex items-center justify-between text-xs p-2.5 bg-card border border-border/60 rounded-xl"
                   >
-                    <span className="text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                       כל ~{Math.round(p.purchase_frequency_days!)} ימים
                     </span>
                     <span className="font-medium">{p.product_name}</span>
