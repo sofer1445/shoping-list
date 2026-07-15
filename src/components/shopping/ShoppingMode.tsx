@@ -82,6 +82,10 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
     };
   }, [currentListId, fetchItems]);
 
+  const { user } = useAuth();
+  const { online, justUpdated, profiles } = useListPresence(currentListId);
+  const otherOnline = online.filter((p) => p.user_id !== user?.id);
+
   const { addItem, toggleItem, handleSaveEdit } = useShoppingItems(items, setItems, currentListId);
 
   const visibleItems = useMemo(
