@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShoppingList } from "./hooks/useShoppingList";
@@ -11,6 +11,9 @@ import { ShareListDialog } from "./ShareListDialog";
 import { ShoppingItem } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useListPresence } from "@/hooks/useListPresence";
+import { useAuth } from "@/components/AuthProvider";
+import { cn } from "@/lib/utils";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
