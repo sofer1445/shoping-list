@@ -9,6 +9,7 @@ interface Props {
   items: ShoppingItem[];
   onToggle: (id: string) => void;
   onEdit: (item: ShoppingItem) => void;
+  profiles?: Record<string, string>;
 }
 
 const emoji: Record<string, string> = {
@@ -19,15 +20,16 @@ const emoji: Record<string, string> = {
   "אחר": "📦",
 };
 
-export const CategoryGroup = ({ category, items, onToggle, onEdit }: Props) => {
+export const CategoryGroup = ({ category, items, onToggle, onEdit, profiles }: Props) => {
   const [open, setOpen] = useState(true);
   const remaining = items.filter((i) => !i.completed).length;
+  const pct = items.length > 0 ? Math.round(((items.length - remaining) / items.length) * 100) : 0;
 
   return (
     <section className="space-y-2">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-2 py-1.5"
+        className="w-full flex items-center justify-between px-1 py-1.5 group"
         dir="rtl"
       >
         <ChevronDown
@@ -36,18 +38,34 @@ export const CategoryGroup = ({ category, items, onToggle, onEdit }: Props) => {
             !open && "-rotate-90"
           )}
         />
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground tabular-nums">
-            {remaining}/{items.length}
+        <div className="flex items-center gap-2.5">
+          <span
+            className={cn(
+              "text-[11px] font-semibold tabular-nums px-2 py-0.5 rounded-full",
+              remaining === 0
+                ? "bg-success/15 text-success"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            {remaining === 0 ? "הושלם" : `${remaining}/${items.length}`}
           </span>
-          <h3 className="font-display font-semibold text-sm">{category}</h3>
-          <span className="text-base">{emoji[category] || "🛒"}</span>
+          <h3 className="font-display font-semibold text-[15px]">{category}</h3>
+          <span className="text-lg">{emoji[category] || "🛒"}</span>
         </div>
       </button>
       {open && (
         <div className="space-y-2">
           {items.map((item) => (
-            <ShoppingRow key={item.id} item={item} onToggle={onToggle} onEdit={onEdit} />
+            <ShoppingRow
+              key={item.id}
+              item={item}
+              onToggle={onToggle}
+              onEdit={onEdit}
+              attribution={{
+                addedBy: item.created_by ? profiles?.[item.created_by] : null,
+                completedBy: item.completed_by ? profiles?.[item.completed_by] : null,
+              }}
+            />
           ))}
         </div>
       )}

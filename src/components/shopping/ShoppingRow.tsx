@@ -1,23 +1,33 @@
-import { Check, Pencil } from "lucide-react";
+import { Check, Pencil, UserPlus2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShoppingItem } from "./types";
+import { useAuth } from "@/components/AuthProvider";
 
 interface Props {
   item: ShoppingItem;
   onToggle: (id: string) => void;
   onEdit: (item: ShoppingItem) => void;
+  attribution?: { addedBy?: string | null; completedBy?: string | null };
 }
 
-export const ShoppingRow = ({ item, onToggle, onEdit }: Props) => {
+export const ShoppingRow = ({ item, onToggle, onEdit, attribution }: Props) => {
+  const { user } = useAuth();
+  const addedByOther =
+    item.created_by && user && item.created_by !== user.id ? attribution?.addedBy : null;
+  const completedByOther =
+    item.completed && item.completed_by && user && item.completed_by !== user.id
+      ? attribution?.completedBy
+      : null;
+
   return (
     <div
       onClick={() => onToggle(item.id)}
       className={cn(
-        "group flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3.5 min-h-[64px] cursor-pointer transition-all",
+        "group flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3.5 min-h-[68px] cursor-pointer transition-all",
         "active:scale-[0.99]",
-        item.completed && "opacity-60",
-        item.justCompleted && "bg-success/10 border-success/30",
-        item.isNew && "bg-primary/5 border-primary/30"
+        item.completed && "opacity-70",
+        item.justCompleted && "bg-success/10 border-success/40 animate-in fade-in zoom-in-95 duration-300",
+        item.isNew && "bg-primary/5 border-primary/40 ring-1 ring-primary/20"
       )}
       dir="rtl"
     >
@@ -41,19 +51,30 @@ export const ShoppingRow = ({ item, onToggle, onEdit }: Props) => {
         >
           {item.name}
         </div>
-        {item.quantity > 1 && (
-          <div className="text-[11px] text-muted-foreground mt-0.5">
-            כמות: {item.quantity}
-          </div>
-        )}
+        <div className="flex items-center gap-2 justify-end mt-0.5 text-[11px] text-muted-foreground">
+          {item.quantity > 1 && <span>×{item.quantity}</span>}
+          {completedByOther ? (
+            <span className="flex items-center gap-1">
+              <Check className="h-3 w-3 text-success" />
+              סומן ע״י {completedByOther}
+            </span>
+          ) : addedByOther ? (
+            <span className="flex items-center gap-1">
+              <UserPlus2 className="h-3 w-3" />
+              נוסף ע״י {addedByOther}
+            </span>
+          ) : item.isNew ? (
+            <span className="text-primary font-medium">חדש</span>
+          ) : null}
+        </div>
       </div>
 
       <div
         className={cn(
-          "h-8 w-8 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
+          "h-9 w-9 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
           item.completed
-            ? "bg-success border-success text-white"
-            : "border-muted-foreground/30 group-hover:border-primary"
+            ? "bg-success border-success text-white scale-100"
+            : "border-muted-foreground/30 group-hover:border-primary group-active:scale-90"
         )}
       >
         {item.completed && <Check className="h-5 w-5" strokeWidth={3} />}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShoppingList } from "./hooks/useShoppingList";
@@ -11,6 +11,9 @@ import { ShareListDialog } from "./ShareListDialog";
 import { ShoppingItem } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useListPresence } from "@/hooks/useListPresence";
+import { useAuth } from "@/components/AuthProvider";
+import { cn } from "@/lib/utils";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
 
@@ -79,6 +82,10 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
     };
   }, [currentListId, fetchItems]);
 
+  const { user } = useAuth();
+  const { online, justUpdated, profiles } = useListPresence(currentListId);
+  const otherOnline = online.filter((p) => p.user_id !== user?.id);
+
   const { addItem, toggleItem, handleSaveEdit } = useShoppingItems(items, setItems, currentListId);
 
   const visibleItems = useMemo(
@@ -129,9 +136,9 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   }
 
   return (
-    <div className="pb-32" dir="rtl">
+    <div className="pb-32 bg-gradient-to-b from-primary/[0.04] via-background to-background min-h-[100dvh]" dir="rtl">
       {/* Header with progress ring */}
-      <div className="sticky top-14 z-20 bg-background/90 backdrop-blur-xl px-3 py-3 border-b border-border/60">
+      <div className="sticky top-14 z-20 bg-background/85 backdrop-blur-xl px-3 py-3 border-b border-border/60">
         <div className="flex items-center justify-between gap-3">
           <button
             onClick={onBackToLists}
@@ -141,9 +148,21 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
             <ArrowRight className="h-5 w-5" />
           </button>
           <div className="flex-1 text-right min-w-0">
-            <h1 className="font-display font-bold text-[17px] truncate">{listName}</h1>
-            <div className="text-[11px] text-muted-foreground">
-              {total - done} פריטים לקנייה · {done}/{total} הושלמו
+            <div className="flex items-center gap-2 justify-end">
+              {justUpdated && (
+                <span className="flex items-center gap-1 text-[10px] font-medium text-success bg-success/10 px-2 py-0.5 rounded-full animate-in fade-in slide-in-from-top-1">
+                  <Radio className="h-2.5 w-2.5 animate-pulse" />
+                  עודכן זה עתה
+                </span>
+              )}
+              <h1 className="font-display font-bold text-[17px] truncate">{listName}</h1>
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              {total - done > 0
+                ? `נותרו ${total - done} פריטים לקנייה`
+                : total > 0
+                ? "סיימת הכל 🎉"
+                : "הרשימה ריקה"}
             </div>
           </div>
           <div className="relative h-11 w-11 shrink-0">
@@ -176,7 +195,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
             className="rounded-full text-xs h-8"
           >
             {showCompleted ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-            {showCompleted ? "הסתר שהושלמו" : "הצג גם שהושלמו"}
+            {showCompleted ? "הסתר שסומנו" : "הצג גם שסומנו"}
           </Button>
           <Button
             size="sm"
@@ -187,7 +206,21 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
             <Plus className="h-3.5 w-3.5" />
             הוסף
           </Button>
-          <div className="mr-auto">
+          <div className="mr-auto flex items-center gap-1.5">
+            {otherOnline.length > 0 && (
+              <div className="flex items-center -space-x-1.5 space-x-reverse">
+                {otherOnline.slice(0, 3).map((p) => (
+                  <div
+                    key={p.user_id}
+                    title={`${p.username} · מחובר עכשיו`}
+                    className="h-6 w-6 rounded-full bg-primary/15 border-2 border-background flex items-center justify-center text-[10px] font-bold text-primary relative"
+                  >
+                    {p.username.slice(0, 1).toUpperCase()}
+                    <span className="absolute -bottom-0.5 -left-0.5 h-2 w-2 rounded-full bg-success border border-background" />
+                  </div>
+                ))}
+              </div>
+            )}
             <ShareListDialog listId={currentListId} />
           </div>
         </div>
@@ -213,9 +246,9 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
           </div>
         ) : visibleItems.length === 0 ? (
           <div className="text-center py-10 space-y-2">
-            <CheckCircle2 className="h-12 w-12 mx-auto text-success" />
+            <CheckCircle2 className="h-12 w-12 mx-auto text-success animate-in zoom-in-50 duration-500" />
             <div className="font-display font-semibold">סיימת את כל הרשימה 🎉</div>
-            <p className="text-sm text-muted-foreground">מוכן לסיים את הקנייה</p>
+            <p className="text-sm text-muted-foreground">מוכן לסיים ולשמור בהיסטוריה</p>
           </div>
         ) : (
           grouped.map(([cat, catItems]) => (
@@ -225,6 +258,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
               items={catItems}
               onToggle={toggleItem}
               onEdit={setEditing}
+              profiles={profiles}
             />
           ))
         )}
