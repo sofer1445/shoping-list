@@ -85,6 +85,22 @@ export const useLists = () => {
         .select("list_id, shared_with")
         .in("list_id", allIds);
 
+      // resolve names for all members (owners + sharees) across lists
+      const memberIds = new Set<string>();
+      allIds.forEach((id) => {
+        const src = (own || []).find((l) => l.id === id) || sharedRows.find((l) => l.id === id);
+        if (src) memberIds.add((src as any).created_by);
+      });
+      (allShares || []).forEach((s) => memberIds.add(s.shared_with));
+      const { data: memberProfs } = memberIds.size
+        ? await supabase.from("profiles").select("id, username").in("id", Array.from(memberIds))
+        : { data: [] as any[] };
+      const memberName = (id: string) => {
+        const raw = memberProfs?.find((p: any) => p.id === id)?.username || "";
+        const base = raw.includes("@") ? raw.split("@")[0] : raw;
+        return base || "משתמש";
+      };
+
       const summary: ListSummary[] = [];
 
       for (const id of allIds) {
@@ -101,19 +117,35 @@ export const useLists = () => {
           return t && t > max ? t : max;
         }, (ownRow as any)?.created_at || "1970-01-01");
 
-        const shareCount = (allShares || []).filter((s) => s.list_id === id).length;
+        const ownerId = (source as any).created_by as string;
+        const sharees = (allShares || []).filter((s) => s.list_id === id);
+        const members: ListParticipant[] = [
+          {
+            id: ownerId,
+            name: memberName(ownerId),
+            initial: memberName(ownerId).slice(0, 1).toUpperCase(),
+            is_owner: true,
+          },
+          ...sharees.map((s) => ({
+            id: s.shared_with,
+            name: memberName(s.shared_with),
+            initial: memberName(s.shared_with).slice(0, 1).toUpperCase(),
+            is_owner: false,
+          })),
+        ];
 
         summary.push({
           id,
           name: (source as any).name,
-          created_by: (source as any).created_by,
+          created_by: ownerId,
           updated_at: lastActivity,
           is_owner: !!ownRow,
-          owner_name: ownRow ? null : nameOf((source as any).created_by),
+          owner_name: ownRow ? null : memberName(ownerId),
           permission: ownRow ? "owner" : ((sharedRow as any).permission as "view" | "edit"),
           total,
           completed,
-          participants: 1 + shareCount,
+          participants: members.length,
+          members,
         });
       }
 
