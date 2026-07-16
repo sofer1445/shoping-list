@@ -91,14 +91,14 @@ export const ListsHome = ({ onOpenList }: Props) => {
             <ListPlus className="h-7 w-7 text-primary" />
           </div>
           <div>
-            <div className="font-display font-semibold">אין עדיין רשימות</div>
+            <div className="font-display font-semibold">בואו נתחיל</div>
             <p className="text-sm text-muted-foreground mt-1">
-              צור את הרשימה הראשונה והתחל לחסוך זמן בסופר
+              צור את הרשימה הראשונה ותחסוך זמן בסופר הבא
             </p>
           </div>
           <Button onClick={() => setOpen(true)} className="rounded-xl">
             <Plus className="h-4 w-4" />
-            צור את הרשימה הראשונה
+            צור רשימה ראשונה
           </Button>
         </div>
       ) : (
