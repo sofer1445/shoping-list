@@ -2,6 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 
+export interface ListParticipant {
+  id: string;
+  name: string;
+  initial: string;
+  is_owner: boolean;
+}
+
 export interface ListSummary {
   id: string;
   name: string;
@@ -13,6 +20,7 @@ export interface ListSummary {
   total: number;
   completed: number;
   participants: number;
+  members: ListParticipant[];
 }
 
 export const useLists = () => {
