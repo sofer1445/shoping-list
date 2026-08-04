@@ -38,10 +38,18 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItemName.trim()) return;
+    const normalizedName = newItemName.trim().toLocaleLowerCase("he");
+    if (!normalizedName || newItemQuantity < 1) return;
+    if (
+      items.some(
+        (item) =>
+          !item.completed &&
+          item.name.trim().toLocaleLowerCase("he") === normalizedName
+      )
+    ) return;
 
     onAdd({
-      name: newItemName,
+      name: newItemName.trim(),
       quantity: newItemQuantity,
       category: selectedCategory,
     });
@@ -116,7 +124,16 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
               type="submit"
               size="lg"
               className="w-full rounded-xl h-12 gap-2 text-base font-bold shadow-lg shadow-primary/20"
-              disabled={!newItemName.trim()}
+              disabled={
+                !newItemName.trim() ||
+                newItemQuantity < 1 ||
+                items.some(
+                  (item) =>
+                    !item.completed &&
+                    item.name.trim().toLocaleLowerCase("he") ===
+                      newItemName.trim().toLocaleLowerCase("he")
+                )
+              }
             >
               <span>הוסף לרשימה</span>
               <Plus size={20} strokeWidth={3} />

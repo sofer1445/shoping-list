@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio, RefreshCw, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShoppingList } from "./hooks/useShoppingList";
@@ -29,6 +29,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [listName, setListName] = useState("רשימת קניות");
+  const [finishing, setFinishing] = useState(false);
   const { toast } = useToast();
 
   const shopping = useShoppingList();
@@ -39,6 +40,8 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
     setCurrentListId,
     fetchItems,
     isLoading,
+    hasError,
+    isOfflineMode,
   } = shopping;
 
   // Sync external listId prop into hook
@@ -109,19 +112,24 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   const circumference = 2 * Math.PI * 20;
 
   const finishShopping = async () => {
-    if (!currentListId) return;
-    const { error } = await supabase
-      .from("shopping_lists")
-      .update({ archived: true, archived_at: new Date().toISOString() })
-      .eq("id", currentListId);
-    if (error) {
-      toast({ title: "שגיאה", description: error.message, variant: "destructive" });
-      return;
+    if (!currentListId || finishing || isOfflineMode) return;
+    setFinishing(true);
+    try {
+      const { error } = await supabase
+        .from("shopping_lists")
+        .update({ archived: true, archived_at: new Date().toISOString() })
+        .eq("id", currentListId);
+      if (error) throw error;
+      toast({ title: "הקנייה הושלמה 🎉", description: "הרשימה עברה להיסטוריה" });
+      onSetListId(null);
+      window.dispatchEvent(new CustomEvent("shopping-list-updated"));
+      onFinished();
+    } catch (error) {
+      console.error("Error finishing shopping:", error);
+      toast({ title: "לא הצלחנו לסיים את הקנייה", description: "בדוק את החיבור ונסה שוב", variant: "destructive" });
+    } finally {
+      setFinishing(false);
     }
-    toast({ title: "הקנייה הושלמה 🎉", description: "הרשימה עברה להיסטוריה" });
-    onSetListId(null);
-    window.dispatchEvent(new CustomEvent("shopping-list-updated"));
-    onFinished();
   };
 
   if (isLoading || !currentListId) {
@@ -140,13 +148,15 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
       {/* Header with progress ring */}
       <div className="sticky top-14 z-20 bg-background/85 backdrop-blur-xl px-3 py-3 border-b border-border/60">
         <div className="flex items-center justify-between gap-3">
-          <button
+          <Button
             onClick={onBackToLists}
-            className="h-9 w-9 rounded-full hover:bg-muted flex items-center justify-center"
+            size="icon"
+            variant="ghost"
+            className="h-10 w-10 rounded-full"
             aria-label="חזרה"
           >
             <ArrowRight className="h-5 w-5" />
-          </button>
+          </Button>
           <div className="flex-1 text-right min-w-0">
             <div className="flex items-center gap-2 justify-end">
               {justUpdated && (
@@ -234,6 +244,21 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
 
       {/* List */}
       <div className="px-3 pt-4 space-y-5">
+        {(isOfflineMode || hasError) && (
+          <div className="surface-card p-3 flex items-center justify-between gap-3" role="status">
+            <Button onClick={fetchItems} size="sm" variant="outline" className="rounded-xl shrink-0">
+              <RefreshCw className="h-4 w-4" />
+              נסה שוב
+            </Button>
+            <div className="flex items-center gap-2 text-right">
+              <div>
+                <div className="text-sm font-semibold">מצב לא מקוון</div>
+                <div className="text-[11px] text-muted-foreground">מוצגים הפריטים האחרונים שנשמרו במכשיר</div>
+              </div>
+              <WifiOff className="h-5 w-5 text-muted-foreground shrink-0" />
+            </div>
+          </div>
+        )}
         {total === 0 ? (
           <div className="surface-card p-8 text-center space-y-3 mt-6">
             <ShoppingBag className="h-10 w-10 mx-auto text-muted-foreground" />
@@ -273,12 +298,19 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
           <div className="mx-auto max-w-md">
             <Button
               onClick={finishShopping}
+              disabled={finishing || isOfflineMode}
               size="lg"
               className="w-full rounded-2xl h-12 font-semibold"
               variant={pct === 100 ? "default" : "secondary"}
             >
               <CheckCircle2 className="h-5 w-5" />
-              {pct === 100 ? "סיים ושמור בהיסטוריה" : `סיים קנייה (${done}/${total})`}
+              {finishing
+                ? "שומר..."
+                : isOfflineMode
+                ? "יש להתחבר כדי לסיים"
+                : pct === 100
+                ? "סיים ושמור בהיסטוריה"
+                : `סיים קנייה (${done}/${total})`}
             </Button>
           </div>
         </div>

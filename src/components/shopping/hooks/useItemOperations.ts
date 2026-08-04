@@ -19,7 +19,7 @@ export const useItemOperations = (
     // Check for duplicates
     if (existingItems) {
       const duplicate = existingItems.find(
-        item => item.name.trim().toLowerCase() === newItem.name.trim().toLowerCase() && !item.completed
+        item => item.name.trim().toLocaleLowerCase("he") === newItem.name.trim().toLocaleLowerCase("he") && !item.completed
       );
       if (duplicate) {
         toast({
