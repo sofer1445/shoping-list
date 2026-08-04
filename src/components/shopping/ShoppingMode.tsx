@@ -267,7 +267,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
       {/* Sticky finish bar */}
       {total > 0 && (
         <div
-          className="fixed bottom-[68px] inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border/60 px-3 py-2.5"
+          className="fixed bottom-[72px] inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border/60 px-3 py-2.5"
           style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))" }}
         >
           <div className="mx-auto max-w-md">
