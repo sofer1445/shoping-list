@@ -100,8 +100,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
     const map = new Map<string, ShoppingItem[]>();
     for (const it of visibleItems) {
       const key = it.category || "אחר";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(it);
+      map.set(key, [...(map.get(key) || []), it]);
     }
     return Array.from(map.entries());
   }, [visibleItems]);

@@ -72,8 +72,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
     const map = new Map<string, ArchivedList[]>();
     lists.forEach((l) => {
       const label = format(new Date(l.archived_at), "MMMM yyyy", { locale: he });
-      if (!map.has(label)) map.set(label, []);
-      map.get(label)!.push(l);
+      map.set(label, [...(map.get(label) || []), l]);
     });
     return Array.from(map.entries());
   }, [lists]);

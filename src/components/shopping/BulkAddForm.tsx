@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { List, Wand2 } from "lucide-react";
+import { List, Wand2, Sparkles } from "lucide-react";
 import { ShoppingItem } from "./types";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -17,173 +17,109 @@ export const BulkAddForm = ({ onAdd, categories, items }: BulkAddFormProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // מיפוי פריטים לקטגוריות - יכול להיות מורחב או משופר עם AI
   const categoryMapping: Record<string, string> = {
-    // ירקות ופירות
     'עגבניה': 'ירקות ופירות',
     'מלפפון': 'ירקות ופירות',
-    'לימון': 'ירקות ופירות',
-    'בצל': 'ירקות ופירות',
-    'תפוח': 'ירקות ופירות',
-    'בננה': 'ירקות ופירות',
-    'גזר': 'ירקות ופירות',
-    'חסה': 'ירקות ופירות',
-    'תפוח אדמה': 'ירקות ופירות',
-    'פטרוזיליה': 'ירקות ופירות',
-    'שום': 'ירקות ופירות',
-    
-    // חלב וביצים
-    'חלב': 'חלב וביצים',
-    'ביצים': 'חלב וביצים',
-    'גבינה': 'חלב וביצים',
-    'יוגורט': 'חלב וביצים',
-    'חמאה': 'חלב וביצים',
-    'קוטג': 'חלב וביצים',
-    
-    // בשר ודגים
-    'עוף': 'בשר ודגים',
-    'בקר': 'בשר ודגים',
-    'טונה': 'בשר ודגים',
-    'סלמון': 'בשר ודגים',
-    'נקניק': 'בשר ודגים',
-    
-    // מוצרי ניקיון
-    'סבון': 'מוצרי ניקיון',
-    'נייר טואלט': 'מוצרי ניקיון',
-    'מטליות': 'מוצרי ניקיון',
-    
-    // אחר
-    'לחם': 'אחר',
-    'אורז': 'אחר',
-    'פסטה': 'אחר',
-    'שמן': 'אחר',
+    'חלב': 'מוצרי חלב',
+    'ביצים': 'מוצרי חלב',
+    'גבינה': 'מוצרי חלב',
+    'לחם': 'מזון',
+    'אורז': 'מזון',
+    'פסטה': 'מזון',
+    'סבון': 'ניקיון',
+    'נייר טואלט': 'ניקיון',
   };
 
   const getCategory = (itemName: string): string => {
     const cleanName = itemName.trim().toLowerCase();
-    
-    // חיפוש מדויק
-    if (categoryMapping[cleanName]) {
-      return categoryMapping[cleanName];
-    }
-    
-    // חיפוש חלקי
     for (const [key, category] of Object.entries(categoryMapping)) {
-      if (cleanName.includes(key) || key.includes(cleanName)) {
-        return category;
-      }
+      if (cleanName.includes(key)) return category;
     }
-    
-    return categories[0] || 'אחר';
+    return categories[categories.length - 1] || 'אחר';
   };
 
   const handleBulkAdd = async () => {
     if (!bulkItems.trim()) return;
-    
     setIsProcessing(true);
     
-    const newItems = bulkItems
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(itemName => {
-        // בדיקה אם יש כמות מצוינת (לדוגמה: "עגבניות 2")
-        const match = itemName.match(/^(.+?)\s+(\d+)$/);
-        const name = match ? match[1].trim() : itemName;
-        const quantity = match ? parseInt(match[2]) : 1;
-        
-        return {
-          name,
-          quantity,
-          category: getCategory(name),
-        };
+    const lines = bulkItems.split('\n').map(l => l.trim()).filter(Boolean);
+    const existingItemNames = new Set(items.filter(i => !i.completed).map(i => i.name.toLowerCase()));
+    
+    let addedCount = 0;
+    let skipCount = 0;
+
+    for (const line of lines) {
+      const match = line.match(/^(.+?)\s+(\d+)$/);
+      const name = match ? match[1].trim() : line;
+      const quantity = match ? parseInt(match[2]) : 1;
+
+      if (existingItemNames.has(name.toLowerCase())) {
+        skipCount++;
+        continue;
+      }
+
+      onAdd({
+        name,
+        quantity,
+        category: getCategory(name),
       });
-
-    // בדיקת כפילויות - סינון פריטים שכבר קיימים ברשימה
-    const existingItemNames = items.map(item => item.name.toLowerCase().trim());
-    const itemsToAdd = newItems.filter(newItem => 
-      !existingItemNames.includes(newItem.name.toLowerCase().trim())
-    );
-    
-    const duplicates = newItems.filter(newItem => 
-      existingItemNames.includes(newItem.name.toLowerCase().trim())
-    );
-
-    // הוספת הפריטים החדשים אחד אחר השני עם השהיה קטנה לחוויה טובה יותר
-    for (const item of itemsToAdd) {
-      onAdd(item);
-      await new Promise(resolve => setTimeout(resolve, 100));
+      addedCount++;
     }
-    
+
     setBulkItems("");
     setIsProcessing(false);
     
-    // הצגת הודעות על פריטים שנוספו וכפילויות שדולגו
-    if (itemsToAdd.length > 0) {
+    if (addedCount > 0) {
       toast({
-        title: "פריטים נוספו בהצלחה",
-        description: `${itemsToAdd.length} פריטים נוספו לרשימה`,
+        title: "הפעולה הושלמה",
+        description: `נוספו ${addedCount} פריטים לרשימה`,
       });
     }
-    
-    if (duplicates.length > 0) {
-      const duplicateNames = duplicates.map(item => item.name).join(', ');
+    if (skipCount > 0) {
       toast({
-        title: "פריטים כפולים דולגו",
-        description: `הפריטים הבאים כבר קיימים ברשימה: ${duplicateNames}`,
-        variant: "destructive",
+        title: "פריטים כפולים",
+        description: `דלגנו על ${skipCount} פריטים שכבר קיימים`,
+        variant: "destructive"
       });
     }
   };
 
   return (
-    <Card className="w-full" dir="rtl">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <List size={20} />
-          הוספה מרובה
+    <Card className="w-full border-border/60 shadow-sm rounded-2xl overflow-hidden" dir="rtl">
+      <CardHeader className="bg-muted/30 pb-4">
+        <CardTitle className="flex items-center gap-2 text-[17px] font-display">
+          <Sparkles size={18} className="text-primary" />
+          הוספה חכמה
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="pt-5 space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-muted-foreground">
-            הכנס פריטים (פריט אחד בכל שורה)
-          </label>
+          <div className="flex justify-between items-center px-1">
+            <span className="text-[11px] text-muted-foreground">פריט אחד בכל שורה</span>
+            <label className="text-xs font-bold text-foreground">רשימת מוצרים</label>
+          </div>
           <Textarea
             value={bulkItems}
             onChange={(e) => setBulkItems(e.target.value)}
-            placeholder="עגבניה&#10;מלפפון 2&#10;לחם&#10;חלב"
-            className="min-h-[120px] text-right font-medium resize-none"
-            style={{ direction: 'rtl' }}
+            placeholder="חלב&#10;לחם 2&#10;עגבניות"
+            className="min-h-[140px] text-right font-medium resize-none rounded-xl border-border/60 focus:ring-primary/20"
           />
-          <div className="text-xs text-muted-foreground">
-            טיפ: ניתן לציין כמות לאחר שם הפריט (לדוגמה: "עגבניות 3")
-          </div>
         </div>
         
         <Button
           onClick={handleBulkAdd}
           disabled={!bulkItems.trim() || isProcessing}
-          className="w-full flex items-center justify-center gap-2"
+          className="w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-primary/10 transition-all active:scale-[0.98]"
         >
           {isProcessing ? (
-            <>
-              <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-              מוסיף פריטים...
-            </>
+            <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
           ) : (
             <>
-              <Wand2 size={16} />
-              הוסף את כל הפריטים
+              <Wand2 size={18} />
+              הוסף פריטים
             </>
           )}
         </Button>
-        
-        {bulkItems.trim() && (
-          <div className="text-sm text-muted-foreground">
-            {bulkItems.split('\n').filter(line => line.trim()).length} פריטים מוכנים להוספה
-          </div>
-        )}
       </CardContent>
     </Card>
   );

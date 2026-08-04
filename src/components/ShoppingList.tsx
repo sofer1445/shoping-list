@@ -29,8 +29,9 @@ export const ShoppingList = () => {
     setActiveTab("lists");
     // keep activeListId so returning to shopping tab resumes
     if (searchParams.get("list")) {
-      searchParams.delete("list");
-      setSearchParams(searchParams, { replace: true });
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("list");
+      setSearchParams(nextParams, { replace: true });
     }
   };
 
