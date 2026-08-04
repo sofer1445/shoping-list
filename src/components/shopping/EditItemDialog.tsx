@@ -21,7 +21,7 @@ interface EditItemDialogProps {
   item: ShoppingItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedItem: ShoppingItem) => void;
+  onSave: (updatedItem: ShoppingItem) => boolean | Promise<boolean>;
   categories: string[];
 }
 
@@ -97,9 +97,10 @@ export const EditItemDialog = ({
         <DialogFooter className="sm:justify-start">
           <Button
             type="submit"
-            onClick={() => {
-              onSave(editedItem);
-              onClose();
+            disabled={!editedItem.name.trim() || editedItem.quantity < 1}
+            onClick={async () => {
+              const saved = await onSave(editedItem);
+              if (saved) onClose();
             }}
           >
             שמור שינויים

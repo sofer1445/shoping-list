@@ -26,29 +26,39 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
   const [lists, setLists] = useState<ArchivedList[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const { data: ls } = await supabase
-      .from("shopping_lists")
-      .select("id, name, archived_at")
-      .eq("archived", true)
-      .eq("created_by", user.id)
-      .order("archived_at", { ascending: false })
-      .limit(60);
+    setLoadError(false);
+    try {
+      const { data: ls, error } = await supabase
+        .from("shopping_lists")
+        .select("id, name, archived_at")
+        .eq("archived", true)
+        .eq("created_by", user.id)
+        .order("archived_at", { ascending: false })
+        .limit(60);
+      if (error) throw error;
 
-    const rows: ArchivedList[] = await Promise.all(
-      (ls || []).map(async (l) => {
-        const { data: items } = await supabase
-          .from("shopping_items")
-          .select("*")
-          .eq("list_id", l.id);
-        return { ...l, items: (items || []) as ShoppingItem[] };
-      })
-    );
-    setLists(rows);
-    setLoading(false);
+      const rows: ArchivedList[] = await Promise.all(
+        (ls || []).map(async (l) => {
+          const { data: items, error: itemsError } = await supabase
+            .from("shopping_items")
+            .select("*")
+            .eq("list_id", l.id);
+          if (itemsError) throw itemsError;
+          return { ...l, items: (items || []) as ShoppingItem[] };
+        })
+      );
+      setLists(rows);
+    } catch (error) {
+      console.error("Error loading history:", error);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -91,7 +101,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
       if (error) throw error;
 
       if (list.items.length > 0) {
-        await supabase.from("shopping_items").insert(
+        const { error: itemsError } = await supabase.from("shopping_items").insert(
           list.items.map((it) => ({
             list_id: newList.id,
             name: it.name,
@@ -101,6 +111,10 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
             created_by: user.id,
           }))
         );
+        if (itemsError) {
+          await supabase.from("shopping_lists").delete().eq("id", newList.id);
+          throw itemsError;
+        }
       }
       toast({ title: "רשימה חדשה נוצרה", description: `${list.items.length} פריטים` });
       window.dispatchEvent(new CustomEvent("shopping-list-updated"));
@@ -114,18 +128,26 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
 
   const restoreList = async (list: ArchivedList) => {
     setBusy(list.id);
-    await supabase
-      .from("shopping_lists")
-      .update({ archived: false, archived_at: null })
-      .eq("id", list.id);
-    await supabase
-      .from("shopping_items")
-      .update({ archived: false, archived_at: null })
-      .eq("list_id", list.id);
-    toast({ title: "הרשימה שוחזרה" });
-    window.dispatchEvent(new CustomEvent("shopping-list-updated"));
-    setBusy(null);
-    onOpenList(list.id);
+    try {
+      const { error: listError } = await supabase
+        .from("shopping_lists")
+        .update({ archived: false, archived_at: null })
+        .eq("id", list.id);
+      if (listError) throw listError;
+      const { error: itemsError } = await supabase
+        .from("shopping_items")
+        .update({ archived: false, archived_at: null })
+        .eq("list_id", list.id);
+      if (itemsError) throw itemsError;
+      toast({ title: "הרשימה שוחזרה" });
+      window.dispatchEvent(new CustomEvent("shopping-list-updated"));
+      onOpenList(list.id);
+    } catch (error) {
+      console.error("Error restoring list:", error);
+      toast({ title: "השחזור לא הושלם", description: "נסה שוב בעוד רגע", variant: "destructive" });
+    } finally {
+      setBusy(null);
+    }
   };
 
   if (loading) {
@@ -144,7 +166,17 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
         <h1 className="font-display text-xl font-bold text-right">היסטוריה</h1>
       </div>
 
-      {lists.length > 0 && (
+      {loadError ? (
+        <div className="surface-card p-8 text-center space-y-3" role="alert">
+          <Package className="h-10 w-10 mx-auto text-muted-foreground" />
+          <div className="font-display font-semibold">ההיסטוריה לא נטענה</div>
+          <p className="text-sm text-muted-foreground">בדוק את החיבור ונסה שוב</p>
+          <Button onClick={load} variant="outline" className="rounded-xl">
+            <RotateCcw className="h-4 w-4" />
+            נסה שוב
+          </Button>
+        </div>
+      ) : lists.length > 0 && (
         <div className="surface-card p-4 bg-gradient-to-l from-primary/5 to-transparent">
           <div className="flex items-center justify-between">
             <div className="text-right">
@@ -163,7 +195,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
         </div>
       )}
 
-      {lists.length === 0 ? (
+      {!loadError && lists.length === 0 ? (
         <div className="surface-card p-8 text-center space-y-3">
           <Package className="h-10 w-10 mx-auto text-muted-foreground" />
           <div className="font-display font-semibold">אין עדיין היסטוריה</div>
@@ -171,7 +203,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
             רשימות שתסיים יופיעו כאן עם אפשרות "קנה שוב"
           </p>
         </div>
-      ) : (
+      ) : !loadError ? (
         grouped.map(([label, gLists]) => (
           <section key={label} className="space-y-2.5">
             <h2 className="text-xs font-semibold text-muted-foreground text-right px-1">
@@ -240,7 +272,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
             })}
           </section>
         ))
-      )}
+      ) : null}
     </div>
   );
 };
