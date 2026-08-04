@@ -21,13 +21,13 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
   const validatePassword = (password: string) => {
     const errors = [];
     if (password.length < 8) {
-      errors.push("Password must be at least 8 characters long");
+      errors.push("הסיסמה חייבת להכיל לפחות 8 תווים");
     }
     if (!/(?=.*[a-z])/.test(password)) {
-      errors.push("Password must contain at least one lowercase letter");
+      errors.push("הסיסמה חייבת להכיל לפחות אות לטינית קטנה אחת");
     }
     if (!/(?=.*[A-Z])/.test(password)) {
-      errors.push("Password must contain at least one uppercase letter");
+      errors.push("הסיסמה חייבת להכיל לפחות אות לטינית גדולה אחת");
     }
     return errors;
   };
@@ -54,7 +54,7 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
     const passwordErrors = validatePassword(password);
     if (passwordErrors.length > 0) {
       toast({
-        title: "Invalid Password",
+        title: "סיסמה לא תקינה",
         description: passwordErrors.join('\n'),
         variant: "destructive",
       });
@@ -63,8 +63,8 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
 
     if (password !== confirmPassword) {
       toast({
-        title: "Error",
-        description: "Passwords do not match",
+        title: "הסיסמאות אינן תואמות",
+        description: "יש להזין את אותה הסיסמה בשני השדות",
         variant: "destructive",
       });
       return;
@@ -77,8 +77,8 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
       const emailExists = await checkEmailExists(email);
       if (emailExists) {
         toast({
-          title: "Error",
-          description: "This email is already registered. Please use a different email or try logging in.",
+          title: "כתובת האימייל כבר רשומה",
+          description: "אפשר להתחבר עם הכתובת הזו או להשתמש בכתובת אחרת",
           variant: "destructive",
         });
         return;
@@ -96,15 +96,15 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
 
       if (data) {
         toast({
-          title: "Success!",
-          description: "You can now log in with your credentials.",
+          title: "ההרשמה הושלמה",
+          description: "אפשר להתחבר עכשיו עם הפרטים שלך",
         });
         setView("sign_in");
       }
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "ההרשמה לא הושלמה",
+        description: "בדוק את הפרטים ונסה שוב",
         variant: "destructive",
       });
     } finally {
@@ -126,8 +126,8 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
       }
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "ההתחברות לא הצליחה",
+        description: "האימייל או הסיסמה אינם נכונים",
         variant: "destructive",
       });
     } finally {
@@ -147,8 +147,8 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
       if (error) throw error;
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "ההתחברות עם Google לא הצליחה",
+        description: "נסה שוב בעוד רגע",
         variant: "destructive",
       });
     }
@@ -158,8 +158,8 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
     <div className="space-y-6">
       <Tabs value={view} onValueChange={(v) => setView(v as "sign_in" | "sign_up")}>
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="sign_in">Login</TabsTrigger>
-          <TabsTrigger value="sign_up">Sign up</TabsTrigger>
+          <TabsTrigger value="sign_in">התחברות</TabsTrigger>
+          <TabsTrigger value="sign_up">הרשמה</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sign_in">
@@ -167,21 +167,21 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
             <div className="space-y-2">
               <Input
                 type="email"
-                placeholder="Email"
+                placeholder="אימייל"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
               <Input
                 type="password"
-                placeholder="Password"
+                placeholder="סיסמה"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Connecting..." : "Connect"}
+              {loading ? "מתחבר..." : "התחבר"}
             </Button>
           </form>
         </TabsContent>
@@ -191,7 +191,7 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
             <div className="space-y-2">
               <Input
                 type="email"
-                placeholder="Email"
+                placeholder="אימייל"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -199,25 +199,25 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
               <div className="space-y-1">
                 <Input
                   type="password"
-                  placeholder="Password"
+                  placeholder="סיסמה"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  Password must be at least 8 characters long and contain both uppercase and lowercase letters
+                  לפחות 8 תווים, כולל אות לטינית גדולה ואות לטינית קטנה
                 </p>
               </div>
               <Input
                 type="password"
-                placeholder="Password verification"
+                placeholder="אימות סיסמה"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Registering..." : "Register"}
+              {loading ? "נרשם..." : "הירשם"}
             </Button>
           </form>
         </TabsContent>
@@ -228,8 +228,8 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-muted-foreground">
-            or
+          <span className="bg-card px-2 text-muted-foreground">
+            או
           </span>
         </div>
       </div>
@@ -241,7 +241,7 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
         onClick={handleGoogleSignIn}
         disabled={loading}
       >
-        {view === "sign_in" ? "Login" : "Sign Up"} with Google
+        {view === "sign_in" ? "התחבר" : "הירשם"} עם Google
       </Button>
     </div>
   );
