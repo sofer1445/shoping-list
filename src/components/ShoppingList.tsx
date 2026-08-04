@@ -18,7 +18,7 @@ export const ShoppingList = () => {
       setActiveListId(listId);
       setActiveTab("shopping");
     }
-  }, []);
+  }, [searchParams]);
 
   const openList = (id: string) => {
     setActiveListId(id);
