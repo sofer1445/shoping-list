@@ -32,25 +32,25 @@ export const Navigation = () => {
   if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-50 bg-background/85 backdrop-blur-xl border-b border-border/60">
-      <div className="mx-auto max-w-md px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-            <ShoppingBasket className="h-4 w-4 text-primary" strokeWidth={2.25} />
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/60">
+      <div className="mx-auto max-w-md px-4 h-[60px] flex items-center justify-between" dir="rtl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/10">
+            <ShoppingBasket className="h-5 w-5 text-primary" strokeWidth={2.5} />
           </div>
-          <div className="leading-tight">
-            <div className="font-display font-semibold text-[15px]">סל</div>
-            <div className="text-[10px] text-muted-foreground truncate max-w-[160px]">{user.email}</div>
+          <div className="leading-tight text-right">
+            <div className="font-display font-bold text-[16px] tracking-tight">סל קניות</div>
+            <div className="text-[10px] text-muted-foreground truncate max-w-[140px] font-medium">{user.email}</div>
           </div>
         </div>
         <Button
           onClick={handleLogout}
           variant="ghost"
           size="sm"
-          className="h-9 w-9 p-0 rounded-full text-muted-foreground hover:text-foreground"
+          className="h-10 w-10 p-0 rounded-full text-muted-foreground hover:text-destructive transition-colors"
           aria-label="התנתק"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-5 w-5 rotate-180" />
         </Button>
       </div>
     </header>

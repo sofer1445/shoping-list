@@ -45,6 +45,31 @@ export const useItemModification = (
   };
 
   const handleSaveEdit = async (updatedItem: ShoppingItem) => {
+    const normalizedName = updatedItem.name.trim().toLocaleLowerCase("he");
+    if (!normalizedName || updatedItem.quantity < 1) {
+      toast({
+        title: "פרטים לא תקינים",
+        description: "יש להזין שם פריט וכמות של 1 לפחות",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const duplicate = items.some(
+      (item) =>
+        item.id !== updatedItem.id &&
+        !item.completed &&
+        item.name.trim().toLocaleLowerCase("he") === normalizedName
+    );
+    if (duplicate) {
+      toast({
+        title: "פריט כבר קיים",
+        description: `״${updatedItem.name.trim()}״ כבר נמצא ברשימה`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
     try {
       const { isNew, justCompleted, ...itemForDb } = updatedItem;
       
@@ -65,6 +90,7 @@ export const useItemModification = (
         title: "פריט עודכן",
         description: `${updatedItem.name} עודכן בהצלחה`,
       });
+      return true;
     } catch (error) {
       console.error("Error updating item:", error);
       toast({
@@ -72,6 +98,7 @@ export const useItemModification = (
         description: "לא ניתן היה לעדכן את הפריט",
         variant: "destructive",
       });
+      return false;
     }
   };
 

@@ -27,23 +27,29 @@ export const useLists = () => {
   const { user } = useAuth();
   const [lists, setLists] = useState<ListSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
+    setError(null);
     try {
       // own lists
-      const { data: own } = await supabase
+      const { data: own, error: ownError } = await supabase
         .from("shopping_lists")
         .select("id, name, created_by, created_at")
         .eq("created_by", user.id)
         .eq("archived", false);
 
       // lists shared with me
-      const { data: sharesIn } = await supabase
+      const { data: sharesIn, error: sharesError } = await supabase
         .from("list_shares")
         .select("permission, list_id, shopping_lists!inner(id, name, created_by, archived)")
         .eq("shared_with", user.id);
+
+      if (ownError || sharesError) {
+        throw ownError || sharesError;
+      }
 
       const sharedRows =
         (sharesIn || [])
@@ -151,6 +157,9 @@ export const useLists = () => {
 
       summary.sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
       setLists(summary);
+    } catch (fetchError) {
+      console.error("Error loading lists:", fetchError);
+      setError("לא הצלחנו לטעון את הרשימות. כדאי לבדוק את החיבור ולנסות שוב.");
     } finally {
       setIsLoading(false);
     }
@@ -166,5 +175,5 @@ export const useLists = () => {
     return () => window.removeEventListener("shopping-list-updated", handler);
   }, [fetch]);
 
-  return { lists, isLoading, refetch: fetch };
+  return { lists, isLoading, error, refetch: fetch };
 };

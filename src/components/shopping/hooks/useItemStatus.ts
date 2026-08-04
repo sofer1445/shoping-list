@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ShoppingItem } from "../types";
 import { useAuth } from "@/components/AuthProvider";
 import { useActivityLog } from "@/hooks/useActivityLog";
+import { useToast } from "@/components/ui/use-toast";
 
 export const useItemStatus = (
   items: ShoppingItem[],
@@ -10,6 +11,7 @@ export const useItemStatus = (
 ) => {
   const { user } = useAuth();
   const { logActivity } = useActivityLog();
+  const { toast } = useToast();
 
   const toggleItem = async (id: string) => {
     const item = items.find((i) => i.id === id);
@@ -37,7 +39,13 @@ export const useItemStatus = (
       setItems((prevItems) =>
         prevItems.map((i) =>
           i.id === id
-            ? { ...i, completed: !i.completed, justCompleted: !i.completed }
+            ? {
+                ...i,
+                completed: !item.completed,
+                completed_at: !item.completed ? new Date().toISOString() : null,
+                completed_by: !item.completed ? user?.id || null : null,
+                justCompleted: !item.completed,
+              }
             : i
         )
       );
@@ -51,6 +59,11 @@ export const useItemStatus = (
       }, 3000);
     } catch (error) {
       console.error("Error toggling item:", error);
+      toast({
+        title: "העדכון לא נשמר",
+        description: "ייתכן שהרשימה השתנתה במכשיר אחר. נסה שוב.",
+        variant: "destructive",
+      });
     }
   };
 

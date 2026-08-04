@@ -23,8 +23,8 @@ export const ShoppingRow = ({ item, onToggle, onEdit, attribution }: Props) => {
     <div
       onClick={() => onToggle(item.id)}
       className={cn(
-        "group flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3.5 min-h-[68px] cursor-pointer transition-all",
-        "active:scale-[0.99]",
+        "group flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3 min-h-[72px] cursor-pointer transition-all shadow-sm hover:shadow-md",
+        "active:scale-[0.98]",
         item.completed && "opacity-70",
         item.justCompleted && "bg-success/10 border-success/40 animate-in fade-in zoom-in-95 duration-300",
         item.isNew && "bg-primary/5 border-primary/40 ring-1 ring-primary/20"
@@ -36,26 +36,26 @@ export const ShoppingRow = ({ item, onToggle, onEdit, attribution }: Props) => {
           e.stopPropagation();
           onEdit(item);
         }}
-        className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center shrink-0"
+        className="h-11 w-11 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center shrink-0 transition-colors"
         aria-label="ערוך"
       >
-        <Pencil className="h-4 w-4" />
+        <Pencil className="h-5 w-5" />
       </button>
 
       <div className="flex-1 min-w-0 text-right">
         <div
           className={cn(
-            "font-medium text-[15px] truncate",
-            item.completed && "line-through"
+            "font-medium text-[16px] truncate leading-tight",
+            item.completed && "line-through text-muted-foreground"
           )}
         >
           {item.name}
         </div>
-        <div className="flex items-center gap-2 justify-end mt-0.5 text-[11px] text-muted-foreground">
-          {item.quantity > 1 && <span>×{item.quantity}</span>}
+        <div className="flex items-center gap-2 justify-end mt-1 text-[12px] text-muted-foreground">
+          {item.quantity > 1 && <span className="font-semibold bg-muted px-1.5 py-0.5 rounded">×{item.quantity}</span>}
           {completedByOther ? (
-            <span className="flex items-center gap-1">
-              <Check className="h-3 w-3 text-success" />
+            <span className="flex items-center gap-1 text-success font-medium">
+              <Check className="h-3 w-3" />
               סומן ע״י {completedByOther}
             </span>
           ) : addedByOther ? (
@@ -64,20 +64,20 @@ export const ShoppingRow = ({ item, onToggle, onEdit, attribution }: Props) => {
               נוסף ע״י {addedByOther}
             </span>
           ) : item.isNew ? (
-            <span className="text-primary font-medium">חדש</span>
+            <span className="text-primary font-bold">חדש</span>
           ) : null}
         </div>
       </div>
 
       <div
         className={cn(
-          "h-9 w-9 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+          "h-10 w-10 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
           item.completed
-            ? "bg-success border-success text-white scale-100"
+            ? "bg-success border-success text-white scale-100 shadow-sm"
             : "border-muted-foreground/30 group-hover:border-primary group-active:scale-90"
         )}
       >
-        {item.completed && <Check className="h-5 w-5" strokeWidth={3} />}
+        {item.completed && <Check className="h-6 w-6" strokeWidth={3} />}
       </div>
     </div>
   );

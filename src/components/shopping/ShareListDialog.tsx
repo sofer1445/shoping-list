@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Share } from "lucide-react";
+import { Share, UserPlus } from "lucide-react";
 import { useToast } from "../ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
@@ -15,7 +15,7 @@ interface ShareListDialogProps {
 
 export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
   const [email, setEmail] = useState("");
-  const [permission, setPermission] = useState<'view' | 'edit'>('view');
+  const [permission, setPermission] = useState<'view' | 'edit'>('edit');
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -24,27 +24,23 @@ export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
     if (!user) return;
 
     try {
-      // First get the user id from the profiles table
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', email)
         .maybeSingle();
 
-      if (profileError) {
-        throw profileError;
-      }
+      if (profileError) throw profileError;
 
       if (!profile) {
         toast({
           title: "משתמש לא נמצא",
-          description: "לא נמצא משתמש עם האימייל שהוזן. אנא ודא שהמשתמש נרשם למערכת",
+          description: "לא נמצא משתמש עם האימייל שהוזן.",
           variant: "destructive",
         });
         return;
       }
 
-      // Check if the list is already shared with this user
       const { data: existingShare } = await supabase
         .from('list_shares')
         .select('id')
@@ -54,14 +50,13 @@ export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
 
       if (existingShare) {
         toast({
-          title: "הרשימה כבר משותפת",
-          description: `הרשימה כבר משותפת עם ${email}`,
+          title: "כבר משותף",
+          description: "הרשימה כבר משותפת עם משתמש זה",
           variant: "destructive",
         });
         return;
       }
 
-      // Then create the share
       const { error: shareError } = await supabase
         .from('list_shares')
         .insert({
@@ -74,7 +69,7 @@ export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
       if (shareError) throw shareError;
 
       toast({
-        title: "הרשימה שותפה בהצלחה",
+        title: "שותף בהצלחה",
         description: `הרשימה שותפה עם ${email}`,
       });
       setEmail("");
@@ -92,46 +87,53 @@ export const ShareListDialog = ({ listId }: ShareListDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Share size={16} />
-          שתף רשימה
+        <Button variant="outline" size="sm" className="h-8 rounded-full gap-2 text-[11px] font-bold px-3">
+          <Share size={14} />
+          שתף
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[400px] rounded-3xl" dir="rtl">
         <DialogHeader>
-          <DialogTitle>שתף רשימת קניות</DialogTitle>
+          <DialogTitle className="text-right font-display text-lg">שתף רשימה</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-5 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="email">אימייל המשתמש</Label>
+            <Label htmlFor="email" className="text-right text-muted-foreground mr-1 text-xs">אימייל המשתמש</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="הזן אימייל"
-              className="text-right"
+              placeholder="user@example.com"
+              className="text-right h-12 rounded-xl"
             />
           </div>
-          <div className="grid gap-2">
-            <Label>הרשאות</Label>
+          <div className="grid gap-3">
+            <Label className="text-right text-muted-foreground mr-1 text-xs">הרשאות</Label>
             <RadioGroup
               value={permission}
               onValueChange={(value) => setPermission(value as 'view' | 'edit')}
-              className="flex gap-4"
+              className="flex flex-row-reverse justify-end gap-6"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <RadioGroupItem value="view" id="view" />
-                <Label htmlFor="view">צפייה בלבד</Label>
+                <Label htmlFor="view" className="font-medium">צפייה בלבד</Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <RadioGroupItem value="edit" id="edit" />
-                <Label htmlFor="edit">עריכה</Label>
+                <Label htmlFor="edit" className="font-medium">עריכה</Label>
               </div>
             </RadioGroup>
           </div>
         </div>
-        <Button onClick={handleShare} disabled={!email}>שתף</Button>
+        <Button 
+          onClick={handleShare} 
+          disabled={!email} 
+          className="w-full h-12 rounded-xl font-bold gap-2"
+        >
+          <UserPlus size={18} />
+          שלח הזמנה
+        </Button>
       </DialogContent>
     </Dialog>
   );

@@ -7,7 +7,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 
-const COLORS = ["hsl(var(--primary))", "hsl(217 91% 75%)", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4"];
+const COLORS = [
+  "hsl(var(--primary))",
+  "hsl(var(--info))",
+  "hsl(var(--warning))",
+  "hsl(var(--success))",
+  "hsl(var(--accent-foreground))",
+  "hsl(var(--muted-foreground))",
+];
 
 interface Analytics {
   product_name: string;
@@ -30,10 +37,12 @@ export const InsightsScreen = () => {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [monthlyItems, setMonthlyItems] = useState(0);
   const [monthlyLists, setMonthlyLists] = useState(0);
+  const [loadError, setLoadError] = useState(false);
 
   const load = async () => {
     if (!user) return;
     setLoading(true);
+    setLoadError(false);
 
     const monthAgo = new Date();
     monthAgo.setDate(monthAgo.getDate() - 30);
@@ -60,10 +69,16 @@ export const InsightsScreen = () => {
         .gte("archived_at", monthAgo.toISOString()),
     ]);
 
-    setAnalytics((a.data as Analytics[]) || []);
-    setPatterns((p.data as Pattern[]) || []);
-    setMonthlyItems(itemsRes.count || 0);
-    setMonthlyLists(listsRes.count || 0);
+    const requestError = a.error || p.error || itemsRes.error || listsRes.error;
+    if (requestError) {
+      console.error("Error loading insights:", requestError);
+      setLoadError(true);
+    } else {
+      setAnalytics((a.data as Analytics[]) || []);
+      setPatterns((p.data as Pattern[]) || []);
+      setMonthlyItems(itemsRes.count || 0);
+      setMonthlyLists(listsRes.count || 0);
+    }
     setLoading(false);
   };
 
@@ -133,6 +148,18 @@ export const InsightsScreen = () => {
         <h1 className="font-display text-xl font-bold">תובנות</h1>
       </div>
 
+      {loadError ? (
+        <div className="surface-card p-8 text-center space-y-3" role="alert">
+          <Sparkles className="h-10 w-10 mx-auto text-muted-foreground" />
+          <div className="font-display font-semibold">התובנות לא נטענו</div>
+          <p className="text-sm text-muted-foreground">בדוק את החיבור ונסה שוב</p>
+          <Button onClick={load} variant="outline" className="rounded-xl">
+            <RotateCcw className="h-4 w-4" />
+            נסה שוב
+          </Button>
+        </div>
+      ) : (
+      <>
       {/* KPI tiles */}
       <div className="grid grid-cols-3 gap-2">
         <div className="kpi-tile text-center">
@@ -255,7 +282,7 @@ export const InsightsScreen = () => {
                     className="flex items-center justify-between text-xs p-2.5 bg-card border border-border/60 rounded-xl"
                   >
                     <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                      כל ~{Math.round(p.purchase_frequency_days!)} ימים
+                      כל ~{Math.round(p.purchase_frequency_days ?? 0)} ימים
                     </span>
                     <span className="font-medium">{p.product_name}</span>
                   </div>
@@ -281,6 +308,8 @@ export const InsightsScreen = () => {
             ) : null
           )}
         </>
+      )}
+      </>
       )}
     </div>
   );

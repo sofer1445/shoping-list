@@ -16,12 +16,13 @@ import {
   SelectValue,
 } from "../ui/select";
 import { ShoppingItem } from "./types";
+import { Label } from "../ui/label";
 
 interface EditItemDialogProps {
   item: ShoppingItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedItem: ShoppingItem) => void;
+  onSave: (updatedItem: ShoppingItem) => boolean | Promise<boolean>;
   categories: string[];
 }
 
@@ -42,24 +43,24 @@ export const EditItemDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] rounded-3xl" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-right">עריכת פריט</DialogTitle>
+          <DialogTitle className="text-right font-display text-xl">עריכת פריט</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-5 py-4">
           <div className="flex flex-col gap-2">
-            <label htmlFor="name" className="text-right">שם המוצר</label>
+            <Label htmlFor="name" className="text-right text-sm text-muted-foreground mr-1">שם המוצר</Label>
             <Input
               id="name"
               value={editedItem.name}
               onChange={(e) =>
                 setEditedItem({ ...editedItem, name: e.target.value })
               }
-              className="text-right"
+              className="text-right h-12 rounded-xl text-[16px]"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="quantity" className="text-right">כמות</label>
+            <Label htmlFor="quantity" className="text-right text-sm text-muted-foreground mr-1">כמות</Label>
             <Input
               id="quantity"
               type="number"
@@ -70,23 +71,23 @@ export const EditItemDialog = ({
                   quantity: parseInt(e.target.value) || 0,
                 })
               }
-              className="text-right"
+              className="text-right h-12 rounded-xl text-[16px]"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="category" className="text-right">קטגוריה</label>
+            <Label htmlFor="category" className="text-right text-sm text-muted-foreground mr-1">קטגוריה</Label>
             <Select
               value={editedItem.category}
               onValueChange={(value) =>
                 setEditedItem({ ...editedItem, category: value })
               }
             >
-              <SelectTrigger className="text-right">
+              <SelectTrigger className="text-right h-12 rounded-xl text-[16px]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
+                  <SelectItem key={category} value={category} className="text-right">
                     {category}
                   </SelectItem>
                 ))}
@@ -94,15 +95,26 @@ export const EditItemDialog = ({
             </Select>
           </div>
         </div>
-        <DialogFooter className="sm:justify-start">
+        <DialogFooter className="flex flex-row gap-3 sm:justify-start">
           <Button
             type="submit"
-            onClick={() => {
-              onSave(editedItem);
-              onClose();
+            size="lg"
+            className="flex-1 rounded-xl h-12 font-bold"
+            disabled={!editedItem.name.trim() || editedItem.quantity < 1}
+            onClick={async () => {
+              const saved = await onSave(editedItem);
+              if (saved) onClose();
             }}
           >
             שמור שינויים
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex-1 rounded-xl h-12 font-bold"
+            onClick={onClose}
+          >
+            ביטול
           </Button>
         </DialogFooter>
       </DialogContent>

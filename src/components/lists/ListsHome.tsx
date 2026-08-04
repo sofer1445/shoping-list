@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, ListPlus } from "lucide-react";
+import { Plus, ListPlus, RefreshCw, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export const ListsHome = ({ onOpenList }: Props) => {
-  const { lists, isLoading, refetch } = useLists();
+  const { lists, isLoading, error, refetch } = useLists();
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -84,6 +84,16 @@ export const ListsHome = ({ onOpenList }: Props) => {
           {[0, 1, 2].map((i) => (
             <Skeleton key={i} className="h-24 rounded-2xl" />
           ))}
+        </div>
+      ) : error ? (
+        <div className="surface-card p-8 text-center space-y-3" role="alert">
+          <WifiOff className="h-10 w-10 mx-auto text-muted-foreground" />
+          <div className="font-display font-semibold">הרשימות לא נטענו</div>
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button onClick={refetch} variant="outline" className="rounded-xl">
+            <RefreshCw className="h-4 w-4" />
+            נסה שוב
+          </Button>
         </div>
       ) : lists.length === 0 ? (
         <div className="surface-card p-8 text-center space-y-3">
