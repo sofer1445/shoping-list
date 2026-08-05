@@ -170,7 +170,7 @@ export const InsightsScreen = () => {
         <div className="kpi-tile text-center">
           <Sparkles className="h-4 w-4 mx-auto text-primary" />
           <div className="text-2xl font-display font-bold mt-1">{monthlyLists}</div>
-          <div className="text-[10px] text-muted-foreground">רשימות הושלמו</div>
+          <div className="text-[10px] text-muted-foreground">רשימות שהושלמו</div>
         </div>
         <div className="kpi-tile text-center">
           <TrendingUp className="h-4 w-4 mx-auto text-primary" />
