@@ -3,7 +3,17 @@ import { Plus, ListPlus, RefreshCw, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useLists } from "@/hooks/useLists";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useLists, type ListSummary } from "@/hooks/useLists";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -21,9 +31,21 @@ export const ListsHome = ({ onOpenList }: Props) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [renaming, setRenaming] = useState<ListSummary | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [savingRename, setSavingRename] = useState(false);
+  const [deleting, setDeleting] = useState<ListSummary | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const owned = lists.filter((l) => l.is_owner);
   const shared = lists.filter((l) => !l.is_owner);
+
+  const fail = (e: any) =>
+    toast({
+      title: "שגיאה",
+      description: e?.message || "הפעולה לא הושלמה. נסה שוב.",
+      variant: "destructive",
+    });
 
   const createList = async () => {
     if (!user || !name.trim()) return;
@@ -41,9 +63,119 @@ export const ListsHome = ({ onOpenList }: Props) => {
       await refetch();
       if (data) onOpenList(data.id);
     } catch (e: any) {
-      toast({ title: "שגיאה", description: e.message, variant: "destructive" });
+      fail(e);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const openRename = (list: ListSummary) => {
+    setRenaming(list);
+    setRenameValue(list.name);
+  };
+
+  const saveRename = async () => {
+    if (!renaming || !renameValue.trim()) return;
+    setSavingRename(true);
+    try {
+      const { error } = await supabase
+        .from("shopping_lists")
+        .update({ name: renameValue.trim() })
+        .eq("id", renaming.id);
+      if (error) throw error;
+      toast({ title: "השם עודכן", description: renameValue.trim() });
+      setRenaming(null);
+      await refetch();
+    } catch (e: any) {
+      fail(e);
+    } finally {
+      setSavingRename(false);
+    }
+  };
+
+  const duplicateList = async (list: ListSummary) => {
+    if (!user) return;
+    setBusy(true);
+    try {
+      const { data: newList, error: createError } = await supabase
+        .from("shopping_lists")
+        .insert({ name: `${list.name} (עותק)`, created_by: user.id })
+        .select()
+        .single();
+      if (createError) throw createError;
+
+      const { data: items, error: itemsError } = await supabase
+        .from("shopping_items")
+        .select("name, quantity, category")
+        .eq("list_id", list.id)
+        .eq("archived", false);
+      if (itemsError) throw itemsError;
+
+      if (items?.length && newList) {
+        const { error: insertError } = await supabase.from("shopping_items").insert(
+          items.map((i) => ({
+            list_id: newList.id,
+            name: i.name,
+            quantity: i.quantity,
+            category: i.category,
+            created_by: user.id,
+          }))
+        );
+        if (insertError) throw insertError;
+      }
+
+      toast({ title: "הרשימה שוכפלה", description: `${list.name} (עותק)` });
+      await refetch();
+    } catch (e: any) {
+      fail(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const archiveList = async (list: ListSummary) => {
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from("shopping_lists")
+        .update({ archived: true, archived_at: new Date().toISOString() })
+        .eq("id", list.id);
+      if (error) throw error;
+      toast({ title: "הרשימה הועברה לארכיון", description: list.name });
+      await refetch();
+    } catch (e: any) {
+      fail(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    setBusy(true);
+    try {
+      const { error: itemsError } = await supabase
+        .from("shopping_items")
+        .delete()
+        .eq("list_id", deleting.id);
+      if (itemsError) throw itemsError;
+
+      const { error: sharesError } = await supabase
+        .from("list_shares")
+        .delete()
+        .eq("list_id", deleting.id);
+      if (sharesError) throw sharesError;
+
+      const { error } = await supabase.from("shopping_lists").delete().eq("id", deleting.id);
+      if (error) throw error;
+
+      toast({ title: "הרשימה נמחקה", description: deleting.name });
+      setDeleting(null);
+      await refetch();
+    } catch (e: any) {
+      fail(e);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -120,7 +252,15 @@ export const ListsHome = ({ onOpenList }: Props) => {
               </h2>
               <div className="space-y-2.5">
                 {owned.map((l) => (
-                  <ListCard key={l.id} list={l} onOpen={onOpenList} />
+                  <ListCard
+                    key={l.id}
+                    list={l}
+                    onOpen={onOpenList}
+                    onRename={openRename}
+                    onDuplicate={duplicateList}
+                    onArchive={archiveList}
+                    onDelete={setDeleting}
+                  />
                 ))}
               </div>
             </section>
@@ -140,6 +280,57 @@ export const ListsHome = ({ onOpenList }: Props) => {
           )}
         </div>
       )}
+
+      <Dialog open={!!renaming} onOpenChange={(v) => !v && setRenaming(null)}>
+        <DialogContent className="sm:max-w-sm" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-right">שינוי שם הרשימה</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              autoFocus
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              className="text-right"
+              onKeyDown={(e) => e.key === "Enter" && saveRename()}
+            />
+            <Button
+              onClick={saveRename}
+              disabled={!renameValue.trim() || savingRename}
+              className="w-full"
+            >
+              שמור שם
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleting} onOpenChange={(v) => !v && setDeleting(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-right">
+              למחוק את "{deleting?.name}"?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              הרשימה וכל הפריטים שבה יימחקו לגמרי ולא יהיה אפשר לשחזר אותם. אם רק סיימת לקנות, אפשר
+              במקום זה להעביר לארכיון.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              disabled={busy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {busy ? "מוחק..." : "מחק רשימה"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
