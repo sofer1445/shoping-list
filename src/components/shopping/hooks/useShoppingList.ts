@@ -7,9 +7,9 @@ import { ShoppingItem } from "../types";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { useItemsFetching } from "./useItemsFetching";
 
-export const useShoppingList = () => {
+export const useShoppingList = (initialListId?: string | null) => {
   const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [currentListId, setCurrentListId] = useState<string | null>(null);
+  const [currentListId, setCurrentListId] = useState<string | null>(initialListId ?? null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
@@ -118,10 +118,12 @@ export const useShoppingList = () => {
   }, [user, toast, logActivity, hasAttemptedInitialFetch]);
 
   useEffect(() => {
+    // Never auto-pick a list when the user explicitly opened one
+    if (initialListId) return;
     if (user && !currentListId && !isLoading) {
       createInitialList();
     }
-  }, [user, currentListId, createInitialList, isLoading]);
+  }, [user, currentListId, createInitialList, isLoading, initialListId]);
 
   useEffect(() => {
     if (currentListId) {
