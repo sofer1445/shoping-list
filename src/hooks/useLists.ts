@@ -44,7 +44,9 @@ export const useLists = () => {
       // lists shared with me
       const { data: sharesIn, error: sharesError } = await supabase
         .from("list_shares")
-        .select("permission, list_id, shopping_lists!inner(id, name, created_by, archived)")
+        .select(
+          "permission, list_id, shopping_lists!list_shares_list_id_fkey!inner(id, name, created_by, archived)"
+        )
         .eq("shared_with", user.id);
 
       if (ownError || sharesError) {
