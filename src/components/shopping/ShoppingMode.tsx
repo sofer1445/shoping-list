@@ -32,7 +32,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   const [finishing, setFinishing] = useState(false);
   const { toast } = useToast();
 
-  const shopping = useShoppingList();
+  const shopping = useShoppingList(listId);
   const {
     items,
     setItems,
@@ -48,6 +48,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   useEffect(() => {
     if (listId && listId !== currentListId) {
       setCurrentListId(listId);
+      setItems([]);
     }
   }, [listId]);
 
