@@ -63,7 +63,6 @@ export const ListCard = ({ list, onOpen, onRename, onDuplicate, onArchive, onDel
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                dir="rtl"
                 className="w-44"
                 onClick={(e) => e.stopPropagation()}
               >
