@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Sparkles, TrendingUp, RotateCcw, Package, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,63 +30,69 @@ interface Pattern {
   insights: any;
 }
 
+const loadInsights = async (userId: string) => {
+  const monthAgo = new Date();
+  monthAgo.setDate(monthAgo.getDate() - 30);
+
+  const [a, p, itemsRes, listsRes] = await Promise.all([
+    supabase
+      .from("user_product_analytics")
+      .select("*")
+      .eq("user_id", userId)
+      .order("total_purchases", { ascending: false })
+      .limit(20),
+    supabase.from("user_shopping_patterns").select("*").eq("user_id", userId),
+    supabase
+      .from("shopping_items")
+      .select("id", { count: "exact", head: true })
+      .eq("created_by", userId)
+      .eq("completed", true)
+      .gte("completed_at", monthAgo.toISOString()),
+    supabase
+      .from("shopping_lists")
+      .select("id", { count: "exact", head: true })
+      .eq("created_by", userId)
+      .eq("archived", true)
+      .gte("archived_at", monthAgo.toISOString()),
+  ]);
+
+  const requestError = a.error || p.error || itemsRes.error || listsRes.error;
+  if (requestError) throw requestError;
+
+  return {
+    analytics: ((a.data as Analytics[]) || []),
+    patterns: ((p.data as Pattern[]) || []),
+    monthlyItems: itemsRes.count || 0,
+    monthlyLists: listsRes.count || 0,
+  };
+};
+
 export const InsightsScreen = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [running, setRunning] = useState(false);
-  const [analytics, setAnalytics] = useState<Analytics[]>([]);
-  const [patterns, setPatterns] = useState<Pattern[]>([]);
-  const [monthlyItems, setMonthlyItems] = useState(0);
-  const [monthlyLists, setMonthlyLists] = useState(0);
-  const [loadError, setLoadError] = useState(false);
 
-  const load = async () => {
-    if (!user) return;
-    setLoading(true);
-    setLoadError(false);
+  const query = useQuery({
+    queryKey: ["insights", user?.id],
+    queryFn: () => loadInsights(user!.id),
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+    placeholderData: (prev) => prev,
+  });
 
-    const monthAgo = new Date();
-    monthAgo.setDate(monthAgo.getDate() - 30);
+  const analytics = query.data?.analytics ?? [];
+  const patterns = query.data?.patterns ?? [];
+  const monthlyItems = query.data?.monthlyItems ?? 0;
+  const monthlyLists = query.data?.monthlyLists ?? 0;
+  const loading = query.isPending;
+  const loadError = query.isError;
 
-    const [a, p, itemsRes, listsRes] = await Promise.all([
-      supabase
-        .from("user_product_analytics")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("total_purchases", { ascending: false })
-        .limit(20),
-      supabase.from("user_shopping_patterns").select("*").eq("user_id", user.id),
-      supabase
-        .from("shopping_items")
-        .select("id", { count: "exact", head: true })
-        .eq("created_by", user.id)
-        .eq("completed", true)
-        .gte("completed_at", monthAgo.toISOString()),
-      supabase
-        .from("shopping_lists")
-        .select("id", { count: "exact", head: true })
-        .eq("created_by", user.id)
-        .eq("archived", true)
-        .gte("archived_at", monthAgo.toISOString()),
-    ]);
+  const load = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["insights", user?.id] });
+  }, [queryClient, user?.id]);
 
-    const requestError = a.error || p.error || itemsRes.error || listsRes.error;
-    if (requestError) {
-      console.error("Error loading insights:", requestError);
-      setLoadError(true);
-    } else {
-      setAnalytics((a.data as Analytics[]) || []);
-      setPatterns((p.data as Pattern[]) || []);
-      setMonthlyItems(itemsRes.count || 0);
-      setMonthlyLists(listsRes.count || 0);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    load();
-  }, [user?.id]);
 
   const topItem = analytics[0];
 
