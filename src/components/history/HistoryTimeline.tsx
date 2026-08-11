@@ -42,11 +42,12 @@ const loadHistory = async (userId: string): Promise<ArchivedList[]> => {
   if (itemsError) throw itemsError;
 
   const byList = new Map<string, ShoppingItem[]>();
-  ((items || []) as ShoppingItem[]).forEach((it) => {
+  ((items || []) as (ShoppingItem & { list_id: string })[]).forEach((it) => {
     const arr = byList.get(it.list_id) || [];
     arr.push(it);
     byList.set(it.list_id, arr);
   });
+
 
   return (ls || []).map((l) => ({ ...l, items: byList.get(l.id) || [] }));
 };
