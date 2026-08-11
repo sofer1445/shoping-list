@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Sparkles, TrendingUp, RotateCcw, Package, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
