@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RotateCcw, ArchiveRestore, Package } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
@@ -20,53 +21,66 @@ interface Props {
   onOpenList: (id: string) => void;
 }
 
+const loadHistory = async (userId: string): Promise<ArchivedList[]> => {
+  const { data: ls, error } = await supabase
+    .from("shopping_lists")
+    .select("id, name, archived_at")
+    .eq("archived", true)
+    .eq("created_by", userId)
+    .order("archived_at", { ascending: false })
+    .limit(60);
+  if (error) throw error;
+
+  const ids = (ls || []).map((l) => l.id);
+  if (ids.length === 0) return [];
+
+  // single batched query instead of one request per list
+  const { data: items, error: itemsError } = await supabase
+    .from("shopping_items")
+    .select("*")
+    .in("list_id", ids);
+  if (itemsError) throw itemsError;
+
+  const byList = new Map<string, ShoppingItem[]>();
+  ((items || []) as ShoppingItem[]).forEach((it) => {
+    const arr = byList.get(it.list_id) || [];
+    arr.push(it);
+    byList.set(it.list_id, arr);
+  });
+
+  return (ls || []).map((l) => ({ ...l, items: byList.get(l.id) || [] }));
+};
+
 export const HistoryTimeline = ({ onOpenList }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [lists, setLists] = useState<ArchivedList[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState(false);
 
-  const load = async () => {
-    if (!user) return;
-    setLoading(true);
-    setLoadError(false);
-    try {
-      const { data: ls, error } = await supabase
-        .from("shopping_lists")
-        .select("id, name, archived_at")
-        .eq("archived", true)
-        .eq("created_by", user.id)
-        .order("archived_at", { ascending: false })
-        .limit(60);
-      if (error) throw error;
+  const query = useQuery({
+    queryKey: ["history", user?.id],
+    queryFn: () => loadHistory(user!.id),
+    enabled: !!user,
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
+    placeholderData: (prev) => prev,
+  });
 
-      const rows: ArchivedList[] = await Promise.all(
-        (ls || []).map(async (l) => {
-          const { data: items, error: itemsError } = await supabase
-            .from("shopping_items")
-            .select("*")
-            .eq("list_id", l.id);
-          if (itemsError) throw itemsError;
-          return { ...l, items: (items || []) as ShoppingItem[] };
-        })
-      );
-      setLists(rows);
-    } catch (error) {
-      console.error("Error loading history:", error);
-      setLoadError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const lists = query.data ?? [];
+  const loading = query.isPending;
+  const loadError = query.isError;
+
+  const load = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["history", user?.id] });
+  }, [queryClient, user?.id]);
 
   useEffect(() => {
-    load();
     const h = () => load();
     window.addEventListener("shopping-list-updated", h);
     return () => window.removeEventListener("shopping-list-updated", h);
-  }, [user?.id]);
+  }, [load]);
+
+
 
   const grouped = useMemo(() => {
     const map = new Map<string, ArchivedList[]>();
