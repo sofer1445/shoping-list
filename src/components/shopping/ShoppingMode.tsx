@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio, RefreshCw, WifiOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio, RefreshCw, WifiOff, Rows3, LayoutPanelTop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShoppingList } from "./hooks/useShoppingList";
@@ -8,6 +8,7 @@ import { CategoryGroup } from "./CategoryGroup";
 import { AddItemForm } from "./AddItemForm";
 import { EditItemDialog } from "./EditItemDialog";
 import { ShareListDialog } from "./ShareListDialog";
+import { FocusMode } from "./FocusMode";
 import { ShoppingItem } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,6 +17,8 @@ import { useAuth } from "@/components/AuthProvider";
 import { cn } from "@/lib/utils";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
+const VIEW_KEY = "shopping-view-mode";
+type ViewMode = "list" | "focus";
 
 interface Props {
   listId: string | null;
