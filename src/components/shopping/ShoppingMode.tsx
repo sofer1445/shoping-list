@@ -298,7 +298,16 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
             </div>
           </div>
         )}
-        {total === 0 ? (
+        {viewMode === "focus" ? (
+          <FocusMode
+            items={items}
+            total={total}
+            done={done}
+            onToggle={toggleItem}
+            onEdit={setEditing}
+            profiles={profiles}
+          />
+        ) : total === 0 ? (
           <div className="surface-card p-8 text-center space-y-3 mt-6">
             <ShoppingBag className="h-10 w-10 mx-auto text-muted-foreground" />
             <div className="font-display font-semibold">הרשימה ריקה</div>
