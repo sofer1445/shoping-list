@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio, RefreshCw, WifiOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio, RefreshCw, WifiOff, Rows3, LayoutPanelTop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShoppingList } from "./hooks/useShoppingList";
@@ -8,6 +8,7 @@ import { CategoryGroup } from "./CategoryGroup";
 import { AddItemForm } from "./AddItemForm";
 import { EditItemDialog } from "./EditItemDialog";
 import { ShareListDialog } from "./ShareListDialog";
+import { FocusMode } from "./FocusMode";
 import { ShoppingItem } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,6 +17,8 @@ import { useAuth } from "@/components/AuthProvider";
 import { cn } from "@/lib/utils";
 
 const categories = ["מזון", "ירקות ופירות", "מוצרי חלב", "ניקיון", "אחר"];
+const VIEW_KEY = "shopping-view-mode";
+type ViewMode = "list" | "focus";
 
 interface Props {
   listId: string | null;
@@ -30,7 +33,15 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [listName, setListName] = useState("רשימת קניות");
   const [finishing, setFinishing] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => ((localStorage.getItem(VIEW_KEY) as ViewMode) === "focus" ? "focus" : "list")
+  );
   const { toast } = useToast();
+
+  const changeView = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem(VIEW_KEY, mode);
+  };
 
   const shopping = useShoppingList(listId);
   const {
@@ -197,16 +208,44 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
           </div>
         </div>
 
+        {/* View mode switch */}
+        <div className="mt-3 grid grid-cols-2 gap-1 p-1 rounded-2xl bg-muted/70" role="tablist">
+          {(
+            [
+              { key: "list" as ViewMode, label: "תצוגת רשימה", Icon: Rows3 },
+              { key: "focus" as ViewMode, label: "מצב קנייה", Icon: LayoutPanelTop },
+            ]
+          ).map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={viewMode === key}
+              onClick={() => changeView(key)}
+              className={cn(
+                "flex items-center justify-center gap-1.5 h-9 rounded-xl text-[13px] font-medium transition-all",
+                viewMode === key
+                  ? "bg-card shadow-sm text-foreground"
+                  : "text-muted-foreground"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+
         <div className="flex items-center gap-1.5 mt-3">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setShowCompleted((s) => !s)}
-            className="rounded-full text-xs h-8"
-          >
-            {showCompleted ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-            {showCompleted ? "הסתר שסומנו" : "הצג גם שסומנו"}
-          </Button>
+          {viewMode === "list" && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowCompleted((s) => !s)}
+              className="rounded-full text-xs h-8"
+            >
+              {showCompleted ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              {showCompleted ? "הסתר שסומנו" : "הצג גם שסומנו"}
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"
@@ -259,7 +298,16 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
             </div>
           </div>
         )}
-        {total === 0 ? (
+        {viewMode === "focus" ? (
+          <FocusMode
+            items={items}
+            total={total}
+            done={done}
+            onToggle={toggleItem}
+            onEdit={setEditing}
+            profiles={profiles}
+          />
+        ) : total === 0 ? (
           <div className="surface-card p-8 text-center space-y-3 mt-6">
             <ShoppingBag className="h-10 w-10 mx-auto text-muted-foreground" />
             <div className="font-display font-semibold">הרשימה ריקה</div>
