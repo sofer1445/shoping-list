@@ -33,7 +33,15 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [listName, setListName] = useState("רשימת קניות");
   const [finishing, setFinishing] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => ((localStorage.getItem(VIEW_KEY) as ViewMode) === "focus" ? "focus" : "list")
+  );
   const { toast } = useToast();
+
+  const changeView = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem(VIEW_KEY, mode);
+  };
 
   const shopping = useShoppingList(listId);
   const {
