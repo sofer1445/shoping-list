@@ -94,7 +94,15 @@ export const ProductImage = ({ productName, category }: ProductImageProps) => {
     "candles": "🕯️",
   };
 
-  const emoji = productEmojis[productName.toLowerCase()] || categoryEmojis[category] || "📝";
+  const key = productName.trim().toLowerCase();
+  const partial = Object.keys(productEmojis).find(
+    (k) => k.length > 1 && (key.includes(k) || k.includes(key))
+  );
+  const emoji =
+    productEmojis[key] ||
+    (partial ? productEmojis[partial] : undefined) ||
+    categoryEmojis[category] ||
+    "🛒";
 
   return (
     <div className="w-8 h-8 flex items-center justify-center text-2xl">
