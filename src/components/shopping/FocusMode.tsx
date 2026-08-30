@@ -103,24 +103,24 @@ export const FocusMode = ({ items, total, done, onToggle, onEdit, profiles }: Pr
   const addedBy = item.created_by ? profiles[item.created_by] : null;
 
   return (
-    <div className="px-4 pt-5 pb-4 select-none" dir="rtl">
-      {/* Progress */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-[12px] text-muted-foreground">
-          פריט {index + 1} מתוך {queue.length} שנותרו
+    <div className="px-1 pt-2 pb-2 select-none" dir="rtl">
+      {/* Progress — light and secondary */}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <span className="text-[11px] text-muted-foreground">
+          {index + 1}/{queue.length} שנותרו
         </span>
-        <span className="text-[13px] font-semibold tabular-nums">
+        <span className="text-[11px] text-muted-foreground tabular-nums">
           {done}/{total} הושלמו
         </span>
       </div>
-      <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-5">
+      <div className="h-1 rounded-full bg-muted overflow-hidden mb-5 mx-1">
         <div
-          className="h-full bg-primary transition-all duration-500"
+          className="h-full bg-primary/70 transition-all duration-500"
           style={{ width: `${total ? (done / total) * 100 : 0}%` }}
         />
       </div>
 
-      {/* Card */}
+      {/* Dominant card */}
       <div
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -131,51 +131,50 @@ export const FocusMode = ({ items, total, done, onToggle, onEdit, profiles }: Pr
           transition: startX.current === null ? "transform 220ms ease" : "none",
         }}
         className={cn(
-          "relative rounded-3xl border border-border/60 bg-card shadow-lg p-6 text-center touch-pan-y",
+          "relative rounded-[28px] border border-border/50 bg-card shadow-[0_18px_45px_-20px_hsl(var(--foreground)/0.35)] px-6 py-9 text-center touch-pan-y",
           marking && "border-success/50 bg-success/5 scale-[0.98]"
         )}
       >
         <button
           onClick={() => onEdit(item)}
-          className="absolute top-3 left-3 h-10 w-10 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted"
+          className="absolute top-3 left-3 h-10 w-10 rounded-full flex items-center justify-center text-muted-foreground/70 hover:bg-muted"
           aria-label="ערוך פריט"
         >
           <Pencil className="h-4 w-4" />
         </button>
 
-        <div className="mx-auto h-28 w-28 rounded-3xl bg-primary/8 border border-primary/15 flex items-center justify-center mb-4">
-          <div className="scale-[2.6]">
+        <div className="mx-auto h-36 w-36 rounded-[32px] bg-primary/[0.07] border border-primary/10 flex items-center justify-center mb-6">
+          <div className="scale-[3.4]">
             <ProductImage productName={item.name} category={item.category} />
           </div>
         </div>
 
-        <span className="inline-block text-[11px] font-medium px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground mb-2">
-          {item.category || "אחר"}
-        </span>
+        <h2 className="font-display font-bold text-[32px] leading-[1.15] break-words">{item.name}</h2>
 
-        <h2 className="font-display font-bold text-[26px] leading-tight break-words">{item.name}</h2>
-
-        <div className="mt-2 text-sm text-muted-foreground">
-          {item.quantity > 1 ? `כמות: ${item.quantity}` : "כמות: 1"}
+        <div className="mt-3 flex items-center justify-center gap-2 text-[12px] text-muted-foreground">
+          <span className="px-2.5 py-1 rounded-full bg-secondary/70 text-secondary-foreground/80">
+            {item.category || "אחר"}
+          </span>
+          <span>כמות: {item.quantity > 1 ? item.quantity : 1}</span>
         </div>
 
         {addedBy && (
-          <div className="mt-1 text-[12px] text-muted-foreground">נוסף ע״י {addedBy}</div>
+          <div className="mt-2 text-[11px] text-muted-foreground/80">נוסף ע״י {addedBy}</div>
         )}
 
         {marking && (
-          <div className="absolute inset-0 rounded-3xl bg-success/10 flex items-center justify-center animate-in fade-in zoom-in-95">
+          <div className="absolute inset-0 rounded-[28px] bg-success/10 flex items-center justify-center animate-in fade-in zoom-in-95">
             <Check className="h-16 w-16 text-success" />
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="mt-5 space-y-3">
+      <div className="mt-7 space-y-3 px-1">
         <Button
           onClick={markDone}
           size="lg"
-          className="w-full h-16 rounded-2xl text-[17px] font-semibold"
+          className="w-full h-16 rounded-2xl text-[17px] font-semibold shadow-md"
         >
           <Check className="h-6 w-6" />
           סמן כנקנה
@@ -183,8 +182,8 @@ export const FocusMode = ({ items, total, done, onToggle, onEdit, profiles }: Pr
 
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
-            className="flex-1 h-12 rounded-2xl"
+            variant="ghost"
+            className="flex-1 h-11 rounded-2xl text-muted-foreground"
             onClick={() => go(-1)}
             aria-label="הפריט הקודם"
           >
@@ -192,17 +191,17 @@ export const FocusMode = ({ items, total, done, onToggle, onEdit, profiles }: Pr
             הקודם
           </Button>
           <Button
-            variant="outline"
-            className="flex-1 h-12 rounded-2xl"
+            variant="ghost"
+            className="flex-1 h-11 rounded-2xl text-muted-foreground"
             onClick={() => go(1)}
-            aria-label="הפריט הבא"
+            aria-label="דלג לפריט הבא"
           >
             דלג
             <SkipForward className="h-4 w-4" />
-            <ChevronLeft className="h-5 w-5" />
           </Button>
         </div>
       </div>
+
 
       {showHint && (
         <div className="fixed inset-x-0 bottom-32 z-40 flex justify-center px-6 pointer-events-none">
