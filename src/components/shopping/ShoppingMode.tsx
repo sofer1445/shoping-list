@@ -283,8 +283,9 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
       </div>
 
 
-      {/* List */}
-      <div className="px-3 pt-4 space-y-5">
+      {/* Content */}
+      <div className={cn("px-3 space-y-5", viewMode === "focus" ? "pt-5" : "pt-4")}>
+
         {(isOfflineMode || hasError) && (
           <div className="surface-card p-3 flex items-center justify-between gap-3" role="status">
             <Button onClick={fetchItems} size="sm" variant="outline" className="rounded-xl shrink-0">
