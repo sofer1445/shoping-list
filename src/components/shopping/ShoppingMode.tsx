@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio, RefreshCw, WifiOff, Rows3, LayoutPanelTop } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio, RefreshCw, WifiOff, Rows3, LayoutPanelTop, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShoppingList } from "./hooks/useShoppingList";
