@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
-  ChevronLeft,
   ChevronRight,
   Hand,
   Pencil,
   PartyPopper,
   SkipForward,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ShoppingItem } from "./types";
