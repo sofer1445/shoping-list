@@ -155,106 +155,107 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   }
 
   return (
-    <div className="pb-32 bg-gradient-to-b from-primary/[0.04] via-background to-background min-h-[100dvh]" dir="rtl">
-      {/* Header with progress ring */}
-      <div className="sticky top-14 z-20 bg-background/85 backdrop-blur-xl px-3 py-3 border-b border-border/60">
-        <div className="flex items-center justify-between gap-3">
+    <div className="pb-40 bg-gradient-to-b from-primary/[0.04] via-background to-background min-h-[100dvh]" dir="rtl">
+      {/* Compact header */}
+      <div className="sticky top-14 z-20 bg-background/85 backdrop-blur-xl px-3 py-2 border-b border-border/50">
+        <div className="flex items-center gap-2">
           <Button
             onClick={onBackToLists}
             size="icon"
             variant="ghost"
-            className="h-10 w-10 rounded-full"
+            className="h-9 w-9 rounded-full shrink-0"
             aria-label="חזרה"
           >
             <ArrowRight className="h-5 w-5" />
           </Button>
           <div className="flex-1 text-right min-w-0">
-            <div className="flex items-center gap-2 justify-end">
+            <h1 className="font-display font-semibold text-[15px] truncate leading-tight">{listName}</h1>
+            <div className="text-[11px] text-muted-foreground leading-tight flex items-center gap-1.5 justify-start">
+              <span className="truncate">
+                {total - done > 0
+                  ? `נותרו ${total - done} פריטים`
+                  : total > 0
+                  ? "סיימת הכל 🎉"
+                  : "הרשימה ריקה"}
+              </span>
               {justUpdated && (
-                <span className="flex items-center gap-1 text-[10px] font-medium text-success bg-success/10 px-2 py-0.5 rounded-full animate-in fade-in slide-in-from-top-1">
+                <span className="flex items-center gap-1 text-success/90 shrink-0 animate-in fade-in">
                   <Radio className="h-2.5 w-2.5 animate-pulse" />
-                  עודכן זה עתה
+                  עודכן
                 </span>
               )}
-              <h1 className="font-display font-bold text-[17px] truncate">{listName}</h1>
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              {total - done > 0
-                ? `נותרו ${total - done} פריטים לקנייה`
-                : total > 0
-                ? "סיימת הכל 🎉"
-                : "הרשימה ריקה"}
             </div>
           </div>
-          <div className="relative h-11 w-11 shrink-0">
-            <svg className="w-11 h-11 -rotate-90" viewBox="0 0 44 44">
-              <circle cx="22" cy="22" r="20" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
+          <div className="relative h-8 w-8 shrink-0" aria-label={`הושלמו ${pct} אחוז`}>
+            <svg className="w-8 h-8 -rotate-90" viewBox="0 0 44 44">
+              <circle cx="22" cy="22" r="20" fill="none" stroke="hsl(var(--muted))" strokeWidth="4" />
               <circle
                 cx="22"
                 cy="22"
                 r="20"
                 fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="3"
+                stroke="hsl(var(--primary) / 0.75)"
+                strokeWidth="4"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={circumference * (1 - pct / 100)}
                 className="transition-all duration-500"
               />
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold tabular-nums">
-              {pct}%
+            <div className="absolute inset-0 flex items-center justify-center text-[9px] font-semibold tabular-nums text-muted-foreground">
+              {pct}
             </div>
           </div>
         </div>
 
-        {/* View mode switch */}
-        <div className="mt-3 grid grid-cols-2 gap-1 p-1 rounded-2xl bg-muted/70" role="tablist">
-          {(
-            [
-              { key: "list" as ViewMode, label: "תצוגת רשימה", Icon: Rows3 },
-              { key: "focus" as ViewMode, label: "מצב קנייה", Icon: LayoutPanelTop },
-            ]
-          ).map(({ key, label, Icon }) => (
-            <button
-              key={key}
-              role="tab"
-              aria-selected={viewMode === key}
-              onClick={() => changeView(key)}
-              className={cn(
-                "flex items-center justify-center gap-1.5 h-9 rounded-xl text-[13px] font-medium transition-all",
-                viewMode === key
-                  ? "bg-card shadow-sm text-foreground"
-                  : "text-muted-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </div>
+        {/* Slim view switch + secondary actions in one row */}
+        <div className="mt-2 flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-0.5 p-0.5 rounded-full bg-muted/70" role="tablist">
+            {(
+              [
+                { key: "list" as ViewMode, label: "רשימה", Icon: Rows3 },
+                { key: "focus" as ViewMode, label: "קנייה", Icon: LayoutPanelTop },
+              ]
+            ).map(({ key, label, Icon }) => (
+              <button
+                key={key}
+                role="tab"
+                aria-label={key === "list" ? "תצוגת רשימה" : "מצב קנייה"}
+                aria-selected={viewMode === key}
+                onClick={() => changeView(key)}
+                className={cn(
+                  "flex items-center justify-center gap-1 h-7 px-3 rounded-full text-[12px] font-medium transition-all",
+                  viewMode === key ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
 
-        <div className="flex items-center gap-1.5 mt-3">
-          {viewMode === "list" && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowCompleted((s) => !s)}
-              className="rounded-full text-xs h-8"
-            >
-              {showCompleted ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              {showCompleted ? "הסתר שסומנו" : "הצג גם שסומנו"}
-            </Button>
-          )}
           <Button
-            size="sm"
+            size="icon"
             variant="ghost"
             onClick={() => setShowAdd((s) => !s)}
-            className="rounded-full text-xs h-8"
+            className="h-8 w-8 rounded-full shrink-0"
+            aria-label="הוסף פריט"
           >
-            <Plus className="h-3.5 w-3.5" />
-            הוסף
+            <Plus className="h-4 w-4" />
           </Button>
+
+          {viewMode === "list" && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setShowCompleted((s) => !s)}
+              className="h-8 w-8 rounded-full shrink-0"
+              aria-label={showCompleted ? "הסתר פריטים שסומנו" : "הצג גם פריטים שסומנו"}
+            >
+              {showCompleted ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          )}
+
           <div className="mr-auto flex items-center gap-1.5">
             {otherOnline.length > 0 && (
               <div className="flex items-center -space-x-1.5 space-x-reverse">
@@ -275,14 +276,16 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
         </div>
 
         {showAdd && (
-          <div className="mt-3">
+          <div className="mt-2">
             <AddItemForm onAdd={addItem} categories={categories} items={items} />
           </div>
         )}
       </div>
 
-      {/* List */}
-      <div className="px-3 pt-4 space-y-5">
+
+      {/* Content */}
+      <div className={cn("px-3 space-y-5", viewMode === "focus" ? "pt-5" : "pt-4")}>
+
         {(isOfflineMode || hasError) && (
           <div className="surface-card p-3 flex items-center justify-between gap-3" role="status">
             <Button onClick={fetchItems} size="sm" variant="outline" className="rounded-xl shrink-0">
@@ -337,13 +340,14 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
         )}
       </div>
 
-      {/* Sticky finish bar */}
+      {/* Floating finish bar */}
       {total > 0 && (
         <div
-          className="fixed bottom-[72px] inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border/60 px-3 py-2.5"
-          style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))" }}
+          className="fixed bottom-[76px] inset-x-0 z-40 px-4 pointer-events-none"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="mx-auto max-w-md">
+          <div className="mx-auto max-w-md pointer-events-auto rounded-2xl bg-background/80 backdrop-blur-xl border border-border/50 shadow-lg p-1.5">
+
             <Button
               onClick={finishShopping}
               disabled={finishing || isOfflineMode}
