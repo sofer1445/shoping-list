@@ -154,6 +154,66 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
     );
   }
 
+  // ===== Immersive focus mode: full-screen, minimal chrome =====
+  if (viewMode === "focus") {
+    return (
+      <div
+        className="fixed inset-0 z-[60] flex flex-col bg-background"
+        dir="rtl"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        {/* Minimal top strip: exit + progress only */}
+        <div className="shrink-0 px-3 pt-3">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => changeView("list")}
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 rounded-full shrink-0"
+              aria-label="יציאה ממצב קנייה"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+            <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary/70 transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
+              {done}/{total}
+            </span>
+          </div>
+          {isOfflineMode && (
+            <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+              <WifiOff className="h-3.5 w-3.5" />
+              מצב לא מקוון
+            </div>
+          )}
+        </div>
+
+        <FocusMode
+          items={items}
+          total={total}
+          done={done}
+          onToggle={toggleItem}
+          onEdit={setEditing}
+          profiles={profiles}
+          onFinish={finishShopping}
+          finishDisabled={finishing || isOfflineMode}
+        />
+
+        <EditItemDialog
+          item={editing}
+          isOpen={!!editing}
+          onClose={() => setEditing(null)}
+          onSave={handleSaveEdit}
+          categories={categories}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="pb-40 bg-gradient-to-b from-primary/[0.04] via-background to-background min-h-[100dvh]" dir="rtl">
       {/* Compact header */}
