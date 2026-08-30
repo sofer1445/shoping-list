@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio, RefreshCw, WifiOff, Rows3, LayoutPanelTop } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Plus, ShoppingBag, CheckCircle2, Radio, RefreshCw, WifiOff, Rows3, LayoutPanelTop, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShoppingList } from "./hooks/useShoppingList";
@@ -154,6 +154,66 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
     );
   }
 
+  // ===== Immersive focus mode: full-screen, minimal chrome =====
+  if (viewMode === "focus") {
+    return (
+      <div
+        className="fixed inset-0 z-[60] flex flex-col bg-background"
+        dir="rtl"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        {/* Minimal top strip: exit + progress only */}
+        <div className="shrink-0 px-3 pt-3">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => changeView("list")}
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9 rounded-full shrink-0"
+              aria-label="יציאה ממצב קנייה"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+            <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary/70 transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
+              {done}/{total}
+            </span>
+          </div>
+          {isOfflineMode && (
+            <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+              <WifiOff className="h-3.5 w-3.5" />
+              מצב לא מקוון
+            </div>
+          )}
+        </div>
+
+        <FocusMode
+          items={items}
+          total={total}
+          done={done}
+          onToggle={toggleItem}
+          onEdit={setEditing}
+          profiles={profiles}
+          onFinish={finishShopping}
+          finishDisabled={finishing || isOfflineMode}
+        />
+
+        <EditItemDialog
+          item={editing}
+          isOpen={!!editing}
+          onClose={() => setEditing(null)}
+          onSave={handleSaveEdit}
+          categories={categories}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="pb-40 bg-gradient-to-b from-primary/[0.04] via-background to-background min-h-[100dvh]" dir="rtl">
       {/* Compact header */}
@@ -284,7 +344,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
 
 
       {/* Content */}
-      <div className={cn("px-3 space-y-5", viewMode === "focus" ? "pt-5" : "pt-4")}>
+      <div className="px-3 space-y-5 pt-4">
 
         {(isOfflineMode || hasError) && (
           <div className="surface-card p-3 flex items-center justify-between gap-3" role="status">
@@ -301,16 +361,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
             </div>
           </div>
         )}
-        {viewMode === "focus" ? (
-          <FocusMode
-            items={items}
-            total={total}
-            done={done}
-            onToggle={toggleItem}
-            onEdit={setEditing}
-            profiles={profiles}
-          />
-        ) : total === 0 ? (
+        {total === 0 ? (
           <div className="surface-card p-8 text-center space-y-3 mt-6">
             <ShoppingBag className="h-10 w-10 mx-auto text-muted-foreground" />
             <div className="font-display font-semibold">הרשימה ריקה</div>
