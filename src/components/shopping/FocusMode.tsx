@@ -1,12 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Check,
-  ChevronRight,
-  Hand,
-  Pencil,
-  PartyPopper,
-  SkipForward,
-} from "lucide-react";
+import { Check, ChevronRight, Hand, PartyPopper, SkipForward } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,11 +13,22 @@ interface Props {
   onToggle: (id: string) => void;
   onEdit: (item: ShoppingItem) => void;
   profiles: Record<string, string>;
+  onFinish?: () => void;
+  finishDisabled?: boolean;
 }
 
 const HINT_KEY = "focus-mode-hint-seen";
 
-export const FocusMode = ({ items, total, done, onToggle, onEdit, profiles }: Props) => {
+export const FocusMode = ({
+  items,
+  total,
+  done,
+  onToggle,
+  onEdit,
+  profiles,
+  onFinish,
+  finishDisabled,
+}: Props) => {
   // Only unpurchased items, stable order
   const queue = useMemo(() => items.filter((i) => !i.completed), [items]);
   const [index, setIndex] = useState(0);
@@ -86,16 +90,25 @@ export const FocusMode = ({ items, total, done, onToggle, onEdit, profiles }: Pr
 
   if (queue.length === 0 || !item) {
     return (
-      <div className="px-4 pt-10" dir="rtl">
-        <div className="surface-card p-8 text-center space-y-3">
-          <PartyPopper className="h-12 w-12 mx-auto text-success" />
-          <div className="font-display font-semibold text-lg">
-            {total > 0 ? "אין פריטים שנותרו לקנייה" : "הרשימה ריקה"}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {total > 0 ? "אפשר לסיים את הקנייה ולשמור בהיסטוריה" : "הוסף פריטים כדי להתחיל"}
-          </p>
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4" dir="rtl">
+        <PartyPopper className="h-14 w-14 text-success" />
+        <div className="font-display font-semibold text-xl">
+          {total > 0 ? "סיימת הכל" : "הרשימה ריקה"}
         </div>
+        <p className="text-sm text-muted-foreground">
+          {total > 0 ? "אפשר לסיים את הקנייה ולשמור בהיסטוריה" : "הוסף פריטים בתצוגת הרשימה"}
+        </p>
+        {total > 0 && onFinish && (
+          <Button
+            onClick={onFinish}
+            disabled={finishDisabled}
+            size="lg"
+            className="mt-2 h-14 px-8 rounded-2xl text-[16px] font-semibold"
+          >
+            <Check className="h-5 w-5" />
+            סיים ושמור בהיסטוריה
+          </Button>
+        )}
       </div>
     );
   }
@@ -103,96 +116,69 @@ export const FocusMode = ({ items, total, done, onToggle, onEdit, profiles }: Pr
   const addedBy = item.created_by ? profiles[item.created_by] : null;
 
   return (
-    <div className="px-1 pt-2 pb-2 select-none" dir="rtl">
-      {/* Progress — light and secondary */}
-      <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-[11px] text-muted-foreground">
-          {index + 1}/{queue.length} שנותרו
-        </span>
-        <span className="text-[11px] text-muted-foreground tabular-nums">
-          {done}/{total} הושלמו
-        </span>
-      </div>
-      <div className="h-1 rounded-full bg-muted overflow-hidden mb-5 mx-1">
-        <div
-          className="h-full bg-primary/70 transition-all duration-500"
-          style={{ width: `${total ? (done / total) * 100 : 0}%` }}
-        />
-      </div>
-
-      {/* Dominant card */}
+    <div className="flex-1 flex flex-col select-none min-h-0" dir="rtl">
+      {/* The product IS the screen */}
       <div
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onDoubleClick={() => onEdit(item)}
         style={{
-          transform: `translateX(${dx}px) rotate(${dx / 40}deg)`,
+          transform: `translateX(${dx}px) rotate(${dx / 60}deg)`,
           transition: startX.current === null ? "transform 220ms ease" : "none",
         }}
         className={cn(
-          "relative rounded-[28px] border border-border/50 bg-card shadow-[0_18px_45px_-20px_hsl(var(--foreground)/0.35)] px-6 py-9 text-center touch-pan-y",
-          marking && "border-success/50 bg-success/5 scale-[0.98]"
+          "relative flex-1 min-h-0 flex flex-col items-center justify-center gap-6 px-6 text-center touch-pan-y",
+          marking && "opacity-70"
         )}
       >
-        <button
-          onClick={() => onEdit(item)}
-          className="absolute top-3 left-3 h-10 w-10 rounded-full flex items-center justify-center text-muted-foreground/70 hover:bg-muted"
-          aria-label="ערוך פריט"
-        >
-          <Pencil className="h-4 w-4" />
-        </button>
-
-        <div className="mx-auto h-36 w-36 rounded-[32px] bg-primary/[0.07] border border-primary/10 flex items-center justify-center mb-6">
-          <div className="scale-[3.4]">
+        <div className="h-[42vw] w-[42vw] max-h-52 max-w-52 rounded-[36px] bg-primary/[0.06] border border-primary/10 flex items-center justify-center">
+          <div className="scale-[4]">
             <ProductImage productName={item.name} category={item.category} />
           </div>
         </div>
 
-        <h2 className="font-display font-bold text-[32px] leading-[1.15] break-words">{item.name}</h2>
+        <h2 className="font-display font-bold text-[40px] leading-[1.1] break-words max-w-[92%]">
+          {item.name}
+        </h2>
 
-        <div className="mt-3 flex items-center justify-center gap-2 text-[12px] text-muted-foreground">
-          <span className="px-2.5 py-1 rounded-full bg-secondary/70 text-secondary-foreground/80">
-            {item.category || "אחר"}
-          </span>
-          <span>כמות: {item.quantity > 1 ? item.quantity : 1}</span>
+        <div className="text-[13px] text-muted-foreground space-y-1">
+          {item.quantity > 1 && <div className="font-semibold text-foreground">כמות: {item.quantity}</div>}
+          {addedBy && <div className="text-[11px] opacity-80">נוסף ע״י {addedBy}</div>}
         </div>
 
-        {addedBy && (
-          <div className="mt-2 text-[11px] text-muted-foreground/80">נוסף ע״י {addedBy}</div>
-        )}
-
         {marking && (
-          <div className="absolute inset-0 rounded-[28px] bg-success/10 flex items-center justify-center animate-in fade-in zoom-in-95">
-            <Check className="h-16 w-16 text-success" />
+          <div className="absolute inset-0 flex items-center justify-center animate-in fade-in zoom-in-95">
+            <Check className="h-24 w-24 text-success" />
           </div>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="mt-7 space-y-3 px-1">
+      {/* Thumb zone */}
+      <div className="px-5 pb-2 space-y-2">
         <Button
           onClick={markDone}
           size="lg"
-          className="w-full h-16 rounded-2xl text-[17px] font-semibold shadow-md"
+          className="w-full h-16 rounded-[22px] text-[18px] font-semibold shadow-lg"
         >
           <Check className="h-6 w-6" />
           סמן כנקנה
         </Button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           <Button
             variant="ghost"
-            className="flex-1 h-11 rounded-2xl text-muted-foreground"
+            className="flex-1 h-11 rounded-2xl text-muted-foreground text-[13px]"
             onClick={() => go(-1)}
             aria-label="הפריט הקודם"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4" />
             הקודם
           </Button>
           <Button
             variant="ghost"
-            className="flex-1 h-11 rounded-2xl text-muted-foreground"
+            className="flex-1 h-11 rounded-2xl text-muted-foreground text-[13px]"
             onClick={() => go(1)}
             aria-label="דלג לפריט הבא"
           >
@@ -202,9 +188,8 @@ export const FocusMode = ({ items, total, done, onToggle, onEdit, profiles }: Pr
         </div>
       </div>
 
-
       {showHint && (
-        <div className="fixed inset-x-0 bottom-32 z-40 flex justify-center px-6 pointer-events-none">
+        <div className="absolute inset-x-0 bottom-36 z-40 flex justify-center px-6 pointer-events-none">
           <div className="flex items-center gap-2 rounded-full bg-foreground/90 text-background text-[12px] px-4 py-2 shadow-lg animate-in fade-in slide-in-from-bottom-2">
             <Hand className="h-4 w-4" />
             החלק ימינה ושמאלה כדי לעבור בין הפריטים
