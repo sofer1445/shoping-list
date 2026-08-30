@@ -340,13 +340,14 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
         )}
       </div>
 
-      {/* Sticky finish bar */}
+      {/* Floating finish bar */}
       {total > 0 && (
         <div
-          className="fixed bottom-[72px] inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border/60 px-3 py-2.5"
-          style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))" }}
+          className="fixed bottom-[76px] inset-x-0 z-40 px-4 pointer-events-none"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="mx-auto max-w-md">
+          <div className="mx-auto max-w-md pointer-events-auto rounded-2xl bg-background/80 backdrop-blur-xl border border-border/50 shadow-lg p-1.5">
+
             <Button
               onClick={finishShopping}
               disabled={finishing || isOfflineMode}
