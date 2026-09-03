@@ -92,6 +92,21 @@ export const ExportToNewListButton = ({ listId, items, onExport, compact }: Expo
     }
   };
 
+  if (compact) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleExport}
+        className="h-8 w-8 rounded-full shrink-0"
+        aria-label="ייצא את הפריטים שנותרו לרשימה חדשה"
+        title="ייצא את הפריטים שנותרו לרשימה חדשה"
+      >
+        <FileOutput size={16} />
+      </Button>
+    );
+  }
+
   return (
     <Button
       variant="outline"
@@ -104,3 +119,4 @@ export const ExportToNewListButton = ({ listId, items, onExport, compact }: Expo
     </Button>
   );
 };
+
