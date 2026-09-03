@@ -9,6 +9,7 @@ import { AddItemForm } from "./AddItemForm";
 import { EditItemDialog } from "./EditItemDialog";
 import { ShareListDialog } from "./ShareListDialog";
 import { FocusMode } from "./FocusMode";
+import { ExportToNewListButton } from "./ExportToNewListButton";
 import { ShoppingItem } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
