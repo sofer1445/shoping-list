@@ -325,6 +325,21 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
             </Button>
           )}
 
+          {viewMode === "list" && items.some((i) => !i.completed) && (
+            <ExportToNewListButton
+              compact
+              listId={currentListId}
+              items={items}
+              onExport={(newListId) => {
+                onSetListId(newListId);
+                setItems([]);
+                window.dispatchEvent(new CustomEvent("shopping-list-updated"));
+              }}
+            />
+          )}
+
+
+
           <div className="mr-auto flex items-center gap-1.5">
             {otherOnline.length > 0 && (
               <div className="flex items-center -space-x-1.5 space-x-reverse">
