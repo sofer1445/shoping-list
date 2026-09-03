@@ -9,6 +9,7 @@ import { AddItemForm } from "./AddItemForm";
 import { EditItemDialog } from "./EditItemDialog";
 import { ShareListDialog } from "./ShareListDialog";
 import { FocusMode } from "./FocusMode";
+import { ExportToNewListButton } from "./ExportToNewListButton";
 import { ShoppingItem } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -33,15 +34,24 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [listName, setListName] = useState("רשימת קניות");
   const [finishing, setFinishing] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    () => ((localStorage.getItem(VIEW_KEY) as ViewMode) === "focus" ? "focus" : "list")
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      return localStorage.getItem(VIEW_KEY) === "focus" ? "focus" : "list";
+    } catch {
+      return "list";
+    }
+  });
   const { toast } = useToast();
 
   const changeView = (mode: ViewMode) => {
     setViewMode(mode);
-    localStorage.setItem(VIEW_KEY, mode);
+    try {
+      localStorage.setItem(VIEW_KEY, mode);
+    } catch {
+      /* storage unavailable (private mode / quota) — preference simply won't persist */
+    }
   };
+
 
   const shopping = useShoppingList(listId);
   const {
@@ -315,6 +325,21 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
               {showCompleted ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           )}
+
+          {viewMode === "list" && items.some((i) => !i.completed) && (
+            <ExportToNewListButton
+              compact
+              listId={currentListId}
+              items={items}
+              onExport={(newListId) => {
+                onSetListId(newListId);
+                setItems([]);
+                window.dispatchEvent(new CustomEvent("shopping-list-updated"));
+              }}
+            />
+          )}
+
+
 
           <div className="mr-auto flex items-center gap-1.5">
             {otherOnline.length > 0 && (

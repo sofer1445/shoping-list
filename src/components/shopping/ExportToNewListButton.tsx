@@ -9,9 +9,11 @@ interface ExportToNewListButtonProps {
   listId: string;
   items: ShoppingItem[];
   onExport: (newListId: string) => void;
+  compact?: boolean;
 }
 
-export const ExportToNewListButton = ({ listId, items, onExport }: ExportToNewListButtonProps) => {
+export const ExportToNewListButton = ({ listId, items, onExport, compact }: ExportToNewListButtonProps) => {
+
   const { toast } = useToast();
   const { logActivity } = useActivityLog();
 
@@ -90,6 +92,21 @@ export const ExportToNewListButton = ({ listId, items, onExport }: ExportToNewLi
     }
   };
 
+  if (compact) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleExport}
+        className="h-8 w-8 rounded-full shrink-0"
+        aria-label="ייצא את הפריטים שנותרו לרשימה חדשה"
+        title="ייצא את הפריטים שנותרו לרשימה חדשה"
+      >
+        <FileOutput size={16} />
+      </Button>
+    );
+  }
+
   return (
     <Button
       variant="outline"
@@ -102,3 +119,4 @@ export const ExportToNewListButton = ({ listId, items, onExport }: ExportToNewLi
     </Button>
   );
 };
+

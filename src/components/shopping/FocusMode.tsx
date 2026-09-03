@@ -38,9 +38,19 @@ export const FocusMode = ({
   const startX = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!localStorage.getItem(HINT_KEY)) {
+    let seen = true;
+    try {
+      seen = !!localStorage.getItem(HINT_KEY);
+    } catch {
+      seen = false;
+    }
+    if (!seen) {
       setShowHint(true);
-      localStorage.setItem(HINT_KEY, "1");
+      try {
+        localStorage.setItem(HINT_KEY, "1");
+      } catch {
+        /* storage unavailable — hint may show again */
+      }
       const t = setTimeout(() => setShowHint(false), 4000);
       return () => clearTimeout(t);
     }
@@ -116,7 +126,7 @@ export const FocusMode = ({
   const addedBy = item.created_by ? profiles[item.created_by] : null;
 
   return (
-    <div className="flex-1 flex flex-col select-none min-h-0" dir="rtl">
+    <div className="flex-1 flex flex-col select-none min-h-0 overflow-hidden" dir="rtl">
       {/* The product IS the screen */}
       <div
         onPointerDown={onPointerDown}
@@ -129,7 +139,7 @@ export const FocusMode = ({
           transition: startX.current === null ? "transform 220ms ease" : "none",
         }}
         className={cn(
-          "relative flex-1 min-h-0 flex flex-col items-center justify-center gap-6 px-6 text-center touch-pan-y",
+          "relative flex-1 min-h-0 flex flex-col items-center justify-center gap-6 px-6 text-center touch-pan-y overflow-hidden [overscroll-behavior-x:contain]",
           marking && "opacity-70"
         )}
       >
@@ -139,7 +149,7 @@ export const FocusMode = ({
           </div>
         </div>
 
-        <h2 className="font-display font-bold text-[40px] leading-[1.1] break-words max-w-[92%]">
+        <h2 className="font-display font-bold text-[clamp(26px,8vw,40px)] leading-[1.1] break-words [overflow-wrap:anywhere] max-w-[92%] line-clamp-3">
           {item.name}
         </h2>
 
