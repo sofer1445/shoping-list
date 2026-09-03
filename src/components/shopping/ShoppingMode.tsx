@@ -33,15 +33,24 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [listName, setListName] = useState("רשימת קניות");
   const [finishing, setFinishing] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    () => ((localStorage.getItem(VIEW_KEY) as ViewMode) === "focus" ? "focus" : "list")
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      return localStorage.getItem(VIEW_KEY) === "focus" ? "focus" : "list";
+    } catch {
+      return "list";
+    }
+  });
   const { toast } = useToast();
 
   const changeView = (mode: ViewMode) => {
     setViewMode(mode);
-    localStorage.setItem(VIEW_KEY, mode);
+    try {
+      localStorage.setItem(VIEW_KEY, mode);
+    } catch {
+      /* storage unavailable (private mode / quota) — preference simply won't persist */
+    }
   };
+
 
   const shopping = useShoppingList(listId);
   const {
