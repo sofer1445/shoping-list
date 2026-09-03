@@ -9,9 +9,11 @@ interface ExportToNewListButtonProps {
   listId: string;
   items: ShoppingItem[];
   onExport: (newListId: string) => void;
+  compact?: boolean;
 }
 
-export const ExportToNewListButton = ({ listId, items, onExport }: ExportToNewListButtonProps) => {
+export const ExportToNewListButton = ({ listId, items, onExport, compact }: ExportToNewListButtonProps) => {
+
   const { toast } = useToast();
   const { logActivity } = useActivityLog();
 
