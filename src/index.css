@@ -5,8 +5,8 @@
 @layer base {
   :root {
     /* Cloud White palette (HSL) */
-    --background: 210 20% 99%;          /* #fafbfc */
-    --foreground: 222 25% 12%;
+    --background: 210 25% 98%;          /* #fafbfc */
+    --foreground: 222 28% 15%;
 
     --surface: 0 0% 100%;
     --surface-muted: 214 30% 96%;       /* ~#e8ecf1 */
@@ -17,32 +17,32 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 25% 12%;
 
-    --primary: 217 91% 60%;             /* #3b82f6 */
+    --primary: 218 82% 48%;             /* #3b82f6 */
     --primary-foreground: 0 0% 100%;
-    --primary-soft: 217 91% 96%;
+    --primary-soft: 218 85% 95%;
 
     --secondary: 214 30% 96%;
     --secondary-foreground: 222 25% 15%;
 
     --muted: 214 25% 94%;
-    --muted-foreground: 215 16% 47%;    /* ~#94a3b8 stronger */
+    --muted-foreground: 215 16% 42%;    /* ~#94a3b8 stronger */
 
     --accent: 217 91% 96%;
     --accent-foreground: 217 91% 30%;
 
-    --success: 152 60% 40%;
+    --success: 151 65% 32%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 36 90% 40%;
     --warning-foreground: 0 0% 100%;
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --info: 217 91% 60%;
+    --info: 188 72% 35%;
 
     --border: 214 25% 91%;
     --input: 214 25% 91%;
-    --ring: 217 91% 60%;
+    --ring: 218 82% 48%;
 
-    --radius: 1rem;
+    --radius: 0.5rem;
 
     --shadow-xs: 0 1px 2px hsl(222 25% 12% / 0.04);
     --shadow-sm: 0 2px 8px -2px hsl(222 25% 12% / 0.06);
@@ -86,13 +86,13 @@
   body {
     @apply bg-background text-foreground antialiased;
     direction: rtl;
-    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    font-family: 'Manrope', Arial, system-ui, -apple-system, sans-serif;
     font-feature-settings: 'ss01', 'cv11';
     -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, h5, .font-display {
-    font-family: 'Sora', 'Manrope', system-ui, sans-serif;
+    font-family: 'Sora', 'Manrope', Arial, system-ui, sans-serif;
     letter-spacing: 0;
   }
 
@@ -103,17 +103,17 @@
 
 @layer components {
   .app-shell {
-    @apply mx-auto w-full max-w-md min-h-[100dvh] bg-background relative;
+    @apply mx-auto w-full max-w-2xl min-h-[100dvh] bg-background relative;
   }
 
   .surface-card {
-    @apply bg-card rounded-2xl border border-border/60;
-    box-shadow: var(--shadow-sm);
+    @apply bg-card rounded-lg border border-border;
+    box-shadow: none;
   }
 
   .kpi-tile {
-    @apply rounded-2xl p-4 bg-card border border-border/60;
-    box-shadow: var(--shadow-xs);
+    @apply rounded-lg p-4 bg-primary-soft;
+    box-shadow: none;
   }
 }
 
@@ -124,4 +124,56 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   @apply bg-border rounded-full;
+}
+
+@layer components {
+  .screen-heading {
+    @apply text-2xl font-display font-bold leading-tight text-foreground;
+  }
+  .data-section {
+    @apply border-t border-border pt-6 pb-2;
+  }
+  .focus-product {
+    @apply flex-1 min-h-0 flex flex-col items-center justify-center gap-5 px-6 py-6 text-center;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .focus-visual {
+    @apply flex items-center justify-center bg-primary-soft;
+    width: 176px;
+    height: 176px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .focus-title {
+    font-size: 36px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    max-width: 24rem;
+  }
+  .focus-actions {
+    @apply shrink-0 w-full max-w-lg mx-auto px-5 pt-3;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}
+
+::selection { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+input, textarea { caret-color: hsl(var(--primary)); }
+:focus-visible { outline-offset: 4px; }
+
+@media (max-height: 650px) {
+  .focus-visual { width: 112px; height: 112px; }
+  .focus-product { gap: 12px; padding-top: 12px; padding-bottom: 12px; }
+  .focus-title { font-size: 28px; }
+}
+@media (max-width: 360px) {
+  .focus-title { font-size: 30px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

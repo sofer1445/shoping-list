@@ -67,7 +67,7 @@ export const ShoppingList = () => {
 
   return (
     <div className="app-shell pb-[calc(var(--nav-height)+16px)]">
-      <div className="pt-3">
+      <div className="pt-6">
         {pane("lists", <ListsHome onOpenList={openList} />)}
         {pane("shopping", shoppingView)}
         {pane("history", <HistoryTimeline onOpenList={openList} />)}

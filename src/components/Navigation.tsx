@@ -32,15 +32,15 @@ export const Navigation = () => {
   if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/60">
-      <div className="mx-auto max-w-md px-4 h-[60px] flex items-center justify-between" dir="rtl">
+    <header className="sticky top-0 z-50 bg-card border-b border-border">
+      <div className="mx-auto max-w-2xl px-5 h-[64px] flex items-center justify-between" dir="rtl">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/10">
-            <ShoppingBasket className="h-5 w-5 text-primary" strokeWidth={2.5} />
+          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shrink-0 border border-primary/10">
+            <ShoppingBasket className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
           </div>
           <div className="leading-tight text-right">
-            <div className="font-display font-bold text-[16px] tracking-tight">סל קניות</div>
-            <div className="text-[10px] text-muted-foreground truncate max-w-[140px] font-medium">{user.email}</div>
+            <div className="font-display font-bold text-[18px]">סל קניות</div>
+            <div className="text-xs text-muted-foreground truncate max-w-[140px] font-medium">{user.email}</div>
           </div>
         </div>
         <Button

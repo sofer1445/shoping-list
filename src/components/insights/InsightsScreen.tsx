@@ -75,7 +75,7 @@ export const InsightsScreen = () => {
 
   const query = useQuery({
     queryKey: ["insights", user?.id],
-    queryFn: () => loadInsights(user!.id),
+    queryFn: () => user ? loadInsights(user.id) : Promise.resolve({ analytics: [], patterns: [], monthlyItems: 0, monthlyLists: 0 }),
     enabled: !!user,
     staleTime: 5 * 60_000,
     gcTime: 10 * 60_000,
@@ -147,17 +147,17 @@ export const InsightsScreen = () => {
   }
 
   return (
-    <div className="px-3 space-y-4" dir="rtl">
-      <div className="flex items-center justify-between pt-1">
+    <div className="px-5 space-y-7" dir="rtl">
+      <div className="flex flex-row-reverse items-center justify-between gap-3 pt-1">
         <Button onClick={runAnalysis} disabled={running} size="sm" variant="outline" className="rounded-xl">
           <Bot className={running ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
           {running ? "מנתח..." : "רענן"}
         </Button>
-        <h1 className="font-display text-xl font-bold">תובנות</h1>
+        <h1 className="screen-heading">תובנות</h1>
       </div>
 
       {loadError ? (
-        <div className="surface-card p-8 text-center space-y-3" role="alert">
+        <div className="py-12 px-4 text-center space-y-3" role="alert">
           <Sparkles className="h-10 w-10 mx-auto text-muted-foreground" />
           <div className="font-display font-semibold">התובנות לא נטענו</div>
           <p className="text-sm text-muted-foreground">בדוק את החיבור ונסה שוב</p>
@@ -169,28 +169,28 @@ export const InsightsScreen = () => {
       ) : (
       <>
       {/* KPI tiles */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="kpi-tile text-center">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="text-center py-4 min-w-0">
           <Package className="h-4 w-4 mx-auto text-primary" />
           <div className="text-2xl font-display font-bold mt-1">{monthlyItems}</div>
-          <div className="text-[10px] text-muted-foreground">פריטים החודש</div>
+          <div className="text-xs text-muted-foreground">פריטים החודש</div>
         </div>
-        <div className="kpi-tile text-center">
+        <div className="text-center py-4 min-w-0">
           <Sparkles className="h-4 w-4 mx-auto text-primary" />
           <div className="text-2xl font-display font-bold mt-1">{monthlyLists}</div>
-          <div className="text-[10px] text-muted-foreground">רשימות שהושלמו</div>
+          <div className="text-xs text-muted-foreground">רשימות שהושלמו</div>
         </div>
-        <div className="kpi-tile text-center">
+        <div className="text-center py-4 min-w-0">
           <TrendingUp className="h-4 w-4 mx-auto text-primary" />
-          <div className="text-sm font-display font-bold mt-1 truncate">
+          <div className="text-sm font-display font-bold mt-1 break-words">
             {topItem?.product_name || "—"}
           </div>
-          <div className="text-[10px] text-muted-foreground">הכי נפוץ</div>
+          <div className="text-xs text-muted-foreground">הכי נפוץ</div>
         </div>
       </div>
 
       {analytics.length === 0 ? (
-        <div className="surface-card p-8 text-center space-y-3">
+        <div className="py-12 px-4 text-center space-y-3">
           <Sparkles className="h-10 w-10 mx-auto text-primary" />
           <div className="font-display font-semibold">אין עדיין תובנות</div>
           <p className="text-sm text-muted-foreground">
@@ -201,8 +201,8 @@ export const InsightsScreen = () => {
         <>
           {/* Categories */}
           {categoryData.length > 0 && (
-            <div className="surface-card p-4">
-              <h2 className="font-display font-semibold text-sm mb-3 text-right">
+            <div className="data-section">
+              <h2 className="font-display font-semibold text-base mb-4 text-right">
                 התפלגות קטגוריות
               </h2>
               <div className="flex items-center gap-4">
@@ -244,8 +244,8 @@ export const InsightsScreen = () => {
 
           {/* Top items */}
           {topItems.length > 0 && (
-            <div className="surface-card p-4">
-              <h2 className="font-display font-semibold text-sm mb-3 text-right">
+            <div className="data-section">
+              <h2 className="font-display font-semibold text-base mb-4 text-right">
                 הנקנים ביותר
               </h2>
               <div className="space-y-2">
@@ -275,7 +275,7 @@ export const InsightsScreen = () => {
 
           {/* Recommended for next shop */}
           {repeatPatterns.length > 0 && (
-            <div className="surface-card p-4 bg-gradient-to-bl from-primary/5 to-transparent">
+            <div className="data-section">
               <h2 className="font-display font-semibold text-sm mb-1 text-right flex items-center justify-end gap-2">
                 מומלץ לרשימה הבאה
                 <RotateCcw className="h-4 w-4 text-primary" />
@@ -287,9 +287,9 @@ export const InsightsScreen = () => {
                 {repeatPatterns.map((p, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between text-xs p-2.5 bg-card border border-border/60 rounded-xl"
+                    className="flex items-center justify-between text-sm py-3 border-b border-border gap-3"
                   >
-                    <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                       כל ~{Math.round(p.purchase_frequency_days ?? 0)} ימים
                     </span>
                     <span className="font-medium">{p.product_name}</span>
@@ -302,7 +302,7 @@ export const InsightsScreen = () => {
           {/* Textual patterns */}
           {patterns.map((p, i) =>
             Array.isArray(p.insights) && p.insights.length > 0 ? (
-              <div key={i} className="surface-card p-4">
+              <div key={i} className="data-section">
                 <h2 className="font-display font-semibold text-sm mb-2 text-right">תובנות</h2>
                 <ul className="space-y-1.5">
                   {p.insights.map((ins: string, k: number) => (

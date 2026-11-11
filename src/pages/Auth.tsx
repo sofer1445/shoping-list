@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { ShoppingBasket } from "lucide-react";
 import { CustomAuth } from "@/components/auth/CustomAuth";
 
 const AuthPage = () => {
@@ -22,14 +23,15 @@ const AuthPage = () => {
   const redirectTo = window.location.origin;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
-      <div className="max-w-md w-full space-y-8 bg-card p-8 rounded-2xl border border-border/60 shadow-sm">
-        <div>
-          <h1 className="mt-6 text-center text-3xl font-display font-bold text-foreground">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-background py-10 px-6" dir="rtl">
+      <div className="max-w-sm w-full space-y-8">
+        <div className="text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-lg bg-primary text-primary-foreground"><ShoppingBasket className="h-8 w-8" /></div>
+          <h1 className="text-center text-4xl font-display font-bold text-foreground">
             סל קניות
           </h1>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            התחברו או הירשמו כדי לנהל רשימות קניות משותפות
+            הקניות של הבית, במקום אחד
           </p>
         </div>
         <CustomAuth redirectTo={redirectTo} />

@@ -60,7 +60,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
 
   const query = useQuery({
     queryKey: ["history", user?.id],
-    queryFn: () => loadHistory(user!.id),
+    queryFn: () => user ? loadHistory(user.id) : Promise.resolve([]),
     enabled: !!user,
     staleTime: 60_000,
     gcTime: 10 * 60_000,
@@ -175,13 +175,13 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
   }
 
   return (
-    <div className="px-3 space-y-5" dir="rtl">
+    <div className="px-5 space-y-7" dir="rtl">
       <div className="pt-1">
-        <h1 className="font-display text-xl font-bold text-right">היסטוריה</h1>
+        <h1 className="screen-heading text-right">היסטוריה</h1>
       </div>
 
       {loadError ? (
-        <div className="surface-card p-8 text-center space-y-3" role="alert">
+        <div className="py-12 px-4 text-center space-y-3" role="alert">
           <Package className="h-10 w-10 mx-auto text-muted-foreground" />
           <div className="font-display font-semibold">ההיסטוריה לא נטענה</div>
           <p className="text-sm text-muted-foreground">בדוק את החיבור ונסה שוב</p>
@@ -191,7 +191,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
           </Button>
         </div>
       ) : lists.length > 0 && (
-        <div className="surface-card p-4 bg-gradient-to-l from-primary/5 to-transparent">
+        <div className="border-y border-border py-5">
           <div className="flex items-center justify-between">
             <div className="text-right">
               <div className="text-[11px] text-muted-foreground">השבוע</div>
@@ -210,7 +210,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
       )}
 
       {!loadError && lists.length === 0 ? (
-        <div className="surface-card p-8 text-center space-y-3">
+        <div className="py-12 px-4 text-center space-y-3">
           <Package className="h-10 w-10 mx-auto text-muted-foreground" />
           <div className="font-display font-semibold">אין עדיין היסטוריה</div>
           <p className="text-sm text-muted-foreground">
@@ -220,13 +220,13 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
       ) : !loadError ? (
         grouped.map(([label, gLists]) => (
           <section key={label} className="space-y-2.5">
-            <h2 className="text-xs font-semibold text-muted-foreground text-right px-1">
+            <h2 className="text-sm font-semibold text-muted-foreground text-right">
               {label}
             </h2>
             {gLists.map((list) => {
               const preview = list.items.slice(0, 3).map((i) => i.name);
               return (
-                <div key={list.id} className="surface-card p-4 space-y-3">
+                <div key={list.id} className="surface-card p-5 space-y-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="text-[11px] text-muted-foreground shrink-0">
                       {formatDistanceToNow(new Date(list.archived_at), {

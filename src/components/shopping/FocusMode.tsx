@@ -100,8 +100,8 @@ export const FocusMode = ({
 
   if (queue.length === 0 || !item) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4" dir="rtl">
-        <PartyPopper className="h-14 w-14 text-success" />
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-4 overflow-y-auto" dir="rtl">
+        <PartyPopper className="h-16 w-16 text-success" />
         <div className="font-display font-semibold text-xl">
           {total > 0 ? "סיימת הכל" : "הרשימה ריקה"}
         </div>
@@ -113,7 +113,7 @@ export const FocusMode = ({
             onClick={onFinish}
             disabled={finishDisabled}
             size="lg"
-            className="mt-2 h-14 px-8 rounded-2xl text-[16px] font-semibold"
+            className="mt-2 h-14 px-6 rounded-lg text-base font-semibold max-w-full whitespace-normal"
           >
             <Check className="h-5 w-5" />
             סיים ושמור בהיסטוריה
@@ -139,23 +139,24 @@ export const FocusMode = ({
           transition: startX.current === null ? "transform 220ms ease" : "none",
         }}
         className={cn(
-          "relative flex-1 min-h-0 flex flex-col items-center justify-center gap-6 px-6 text-center touch-pan-y overflow-hidden [overscroll-behavior-x:contain]",
+          "relative focus-product touch-pan-y [overscroll-behavior-x:contain]",
           marking && "opacity-70"
         )}
       >
-        <div className="h-[42vw] w-[42vw] max-h-52 max-w-52 rounded-[36px] bg-primary/[0.06] border border-primary/10 flex items-center justify-center">
+        <span className="text-sm font-medium text-muted-foreground shrink-0">{item.category || "אחר"}</span>
+        <div className="focus-visual">
           <div className="scale-[4]">
             <ProductImage productName={item.name} category={item.category} />
           </div>
         </div>
 
-        <h2 className="font-display font-bold text-[clamp(26px,8vw,40px)] leading-[1.1] break-words [overflow-wrap:anywhere] max-w-[92%] line-clamp-3">
+        <h2 className="focus-title font-display font-bold shrink-0">
           {item.name}
         </h2>
 
-        <div className="text-[13px] text-muted-foreground space-y-1">
+        <div className="text-sm text-muted-foreground space-y-1 shrink-0">
           {item.quantity > 1 && <div className="font-semibold text-foreground">כמות: {item.quantity}</div>}
-          {addedBy && <div className="text-[11px] opacity-80">נוסף ע״י {addedBy}</div>}
+          {addedBy && <div className="text-xs">נוסף ע״י {addedBy}</div>}
         </div>
 
         {marking && (
@@ -166,11 +167,11 @@ export const FocusMode = ({
       </div>
 
       {/* Thumb zone */}
-      <div className="px-5 pb-2 space-y-2">
+      <div className="focus-actions space-y-2">
         <Button
           onClick={markDone}
           size="lg"
-          className="w-full h-16 rounded-[22px] text-[18px] font-semibold shadow-lg"
+          className="w-full h-16 rounded-lg text-lg font-semibold bg-success text-success-foreground hover:bg-success/90"
         >
           <Check className="h-6 w-6" />
           סמן כנקנה

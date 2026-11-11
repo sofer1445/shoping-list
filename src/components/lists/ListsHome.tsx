@@ -180,11 +180,11 @@ export const ListsHome = ({ onOpenList }: Props) => {
   };
 
   return (
-    <div className="px-3 space-y-5" dir="rtl">
-      <div className="flex items-center justify-between pt-1">
+    <div className="px-5 space-y-7" dir="rtl">
+      <div className="flex flex-col items-stretch gap-5">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="rounded-xl gap-1.5">
+            <Button size="sm" className="rounded-lg gap-2 w-full justify-center">
               <Plus className="h-4 w-4" />
               רשימה חדשה
             </Button>
@@ -208,7 +208,7 @@ export const ListsHome = ({ onOpenList }: Props) => {
             </div>
           </DialogContent>
         </Dialog>
-        <h1 className="font-display text-xl font-bold">הרשימות שלי</h1>
+        <h1 className="screen-heading order-first">הרשימות שלי</h1>
       </div>
 
       {isLoading ? (
@@ -218,7 +218,7 @@ export const ListsHome = ({ onOpenList }: Props) => {
           ))}
         </div>
       ) : error ? (
-        <div className="surface-card p-8 text-center space-y-3" role="alert">
+        <div className="py-12 px-4 text-center space-y-3" role="alert">
           <WifiOff className="h-10 w-10 mx-auto text-muted-foreground" />
           <div className="font-display font-semibold">הרשימות לא נטענו</div>
           <p className="text-sm text-muted-foreground">{error}</p>
@@ -228,7 +228,7 @@ export const ListsHome = ({ onOpenList }: Props) => {
           </Button>
         </div>
       ) : lists.length === 0 ? (
-        <div className="surface-card p-8 text-center space-y-3">
+        <div className="py-12 px-4 text-center space-y-3">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
             <ListPlus className="h-7 w-7 text-primary" />
           </div>
@@ -246,11 +246,11 @@ export const ListsHome = ({ onOpenList }: Props) => {
       ) : (
         <div className="space-y-5">
           {owned.length > 0 && (
-            <section className="space-y-2">
-              <h2 className="text-xs font-semibold text-muted-foreground text-right px-1">
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground text-right">
                 הרשימות שלך
               </h2>
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {owned.map((l) => (
                   <ListCard
                     key={l.id}
@@ -267,11 +267,11 @@ export const ListsHome = ({ onOpenList }: Props) => {
           )}
 
           {shared.length > 0 && (
-            <section className="space-y-2">
-              <h2 className="text-xs font-semibold text-muted-foreground text-right px-1">
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground text-right">
                 משותפות איתך
               </h2>
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {shared.map((l) => (
                   <ListCard key={l.id} list={l} onOpen={onOpenList} />
                 ))}

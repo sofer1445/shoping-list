@@ -157,15 +157,19 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
   return (
     <div className="space-y-6">
       <Tabs value={view} onValueChange={(v) => setView(v as "sign_in" | "sign_up")}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid h-12 w-full grid-cols-2 rounded-lg">
           <TabsTrigger value="sign_in">התחברות</TabsTrigger>
           <TabsTrigger value="sign_up">הרשמה</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="sign_in">
+        <TabsContent value="sign_in" className="pt-4">
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
               <Input
+                aria-label="אימייל"
+                autoComplete="email"
+                dir="ltr"
+                className="h-12 text-base"
                 type="email"
                 placeholder="אימייל"
                 value={email}
@@ -173,6 +177,9 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
                 required
               />
               <Input
+                aria-label="סיסמה"
+                autoComplete="current-password"
+                className="h-12 text-base"
                 type="password"
                 placeholder="סיסמה"
                 value={password}
@@ -186,10 +193,14 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
           </form>
         </TabsContent>
 
-        <TabsContent value="sign_up">
+        <TabsContent value="sign_up" className="pt-4">
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
               <Input
+                aria-label="אימייל"
+                autoComplete="email"
+                dir="ltr"
+                className="h-12 text-base"
                 type="email"
                 placeholder="אימייל"
                 value={email}
@@ -198,7 +209,10 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
               />
               <div className="space-y-1">
                 <Input
-                  type="password"
+                  aria-label="סיסמה"
+                autoComplete="current-password"
+                className="h-12 text-base"
+                type="password"
                   placeholder="סיסמה"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -209,6 +223,9 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
                 </p>
               </div>
               <Input
+                aria-label="סיסמה"
+                autoComplete="current-password"
+                className="h-12 text-base"
                 type="password"
                 placeholder="אימות סיסמה"
                 value={confirmPassword}
@@ -227,8 +244,8 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-background px-3 text-muted-foreground">
             או
           </span>
         </div>

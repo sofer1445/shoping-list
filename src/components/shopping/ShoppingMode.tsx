@@ -170,16 +170,16 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
       <div
         className="fixed inset-0 z-[60] flex flex-col bg-background"
         dir="rtl"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         {/* Minimal top strip: exit + progress only */}
-        <div className="shrink-0 px-3 pt-3">
+        <div className="shrink-0 px-4 pt-3 pb-2">
           <div className="flex items-center gap-2">
             <Button
               onClick={() => changeView("list")}
               size="icon"
               variant="ghost"
-              className="h-9 w-9 rounded-full shrink-0"
+              className="h-11 w-11 rounded-lg shrink-0"
               aria-label="יציאה ממצב קנייה"
             >
               <X className="h-5 w-5" />
@@ -190,7 +190,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
+            <span className="text-sm text-muted-foreground tabular-nums shrink-0">
               {done}/{total}
             </span>
           </div>
@@ -225,21 +225,21 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   }
 
   return (
-    <div className="pb-40 bg-gradient-to-b from-primary/[0.04] via-background to-background min-h-[100dvh]" dir="rtl">
+    <div className="pb-40 bg-background min-h-[100dvh]" dir="rtl">
       {/* Compact header */}
-      <div className="sticky top-14 z-20 bg-background/85 backdrop-blur-xl px-3 py-2 border-b border-border/50">
+      <div className="sticky top-16 z-20 bg-card px-5 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <Button
             onClick={onBackToLists}
             size="icon"
             variant="ghost"
-            className="h-9 w-9 rounded-full shrink-0"
+            className="h-11 w-11 rounded-lg shrink-0"
             aria-label="חזרה"
           >
             <ArrowRight className="h-5 w-5" />
           </Button>
           <div className="flex-1 text-right min-w-0">
-            <h1 className="font-display font-semibold text-[15px] truncate leading-tight">{listName}</h1>
+            <h1 className="font-display font-semibold text-lg truncate leading-tight">{listName}</h1>
             <div className="text-[11px] text-muted-foreground leading-tight flex items-center gap-1.5 justify-start">
               <span className="truncate">
                 {total - done > 0
@@ -279,28 +279,29 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
         </div>
 
         {/* Slim view switch + secondary actions in one row */}
-        <div className="mt-2 flex items-center gap-2">
-          <div className="grid grid-cols-2 gap-0.5 p-0.5 rounded-full bg-muted/70" role="tablist">
+        <div className="mt-3 flex items-center gap-1 flex-wrap">
+          <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-muted" role="tablist">
             {(
               [
                 { key: "list" as ViewMode, label: "רשימה", Icon: Rows3 },
                 { key: "focus" as ViewMode, label: "קנייה", Icon: LayoutPanelTop },
               ]
             ).map(({ key, label, Icon }) => (
-              <button
+              <Button
+                variant="ghost"
                 key={key}
                 role="tab"
                 aria-label={key === "list" ? "תצוגת רשימה" : "מצב קנייה"}
                 aria-selected={viewMode === key}
                 onClick={() => changeView(key)}
                 className={cn(
-                  "flex items-center justify-center gap-1 h-7 px-3 rounded-full text-[12px] font-medium transition-all",
-                  viewMode === key ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+                  "flex items-center justify-center gap-1 h-11 px-3 rounded-md text-sm font-medium transition-all",
+                  viewMode === key ? "bg-card text-primary hover:bg-card" : "text-muted-foreground"
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -308,7 +309,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
             size="icon"
             variant="ghost"
             onClick={() => setShowAdd((s) => !s)}
-            className="h-8 w-8 rounded-full shrink-0"
+            className="h-11 w-11 rounded-lg shrink-0"
             aria-label="הוסף פריט"
           >
             <Plus className="h-4 w-4" />
@@ -319,7 +320,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
               size="icon"
               variant="ghost"
               onClick={() => setShowCompleted((s) => !s)}
-              className="h-8 w-8 rounded-full shrink-0"
+              className="h-11 w-11 rounded-lg shrink-0"
               aria-label={showCompleted ? "הסתר פריטים שסומנו" : "הצג גם פריטים שסומנו"}
             >
               {showCompleted ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -369,7 +370,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
 
 
       {/* Content */}
-      <div className="px-3 space-y-5 pt-4">
+      <div className="px-5 space-y-6 pt-5">
 
         {(isOfflineMode || hasError) && (
           <div className="surface-card p-3 flex items-center justify-between gap-3" role="status">
@@ -387,7 +388,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
           </div>
         )}
         {total === 0 ? (
-          <div className="surface-card p-8 text-center space-y-3 mt-6">
+          <div className="py-12 px-4 text-center space-y-3 mt-6">
             <ShoppingBag className="h-10 w-10 mx-auto text-muted-foreground" />
             <div className="font-display font-semibold">הרשימה ריקה</div>
             <p className="text-sm text-muted-foreground">הוסף פריט כדי להתחיל</p>
@@ -422,13 +423,13 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
           className="fixed bottom-[76px] inset-x-0 z-40 px-4 pointer-events-none"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="mx-auto max-w-md pointer-events-auto rounded-2xl bg-background/80 backdrop-blur-xl border border-border/50 shadow-lg p-1.5">
+          <div className="mx-auto max-w-2xl pointer-events-auto bg-background border-t border-border pt-3 pb-1">
 
             <Button
               onClick={finishShopping}
               disabled={finishing || isOfflineMode}
               size="lg"
-              className="w-full rounded-2xl h-12 font-semibold"
+              className="w-full rounded-lg h-14 font-semibold"
               variant={pct === 100 ? "default" : "secondary"}
             >
               <CheckCircle2 className="h-5 w-5" />
