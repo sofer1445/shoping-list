@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T06:40:39Z",
+  "title": "Design System: סל קניות",
+  "extensions": {
+    "typographyMeta": {
+      "display": { "displayName": "Sora display", "purpose": "Headings and focus product names with Hebrew fallback." },
+      "body": { "displayName": "Manrope interface", "purpose": "Readable Hebrew interface text with system fallback." }
+    },
+    "motion": [
+      { "name": "purchase-feedback", "value": "320ms", "purpose": "Existing purchase check feedback." },
+      { "name": "reduced-motion", "value": "0.01ms", "purpose": "Disable nonessential transitions when requested." }
+    ],
+    "breakpoints": [
+      { "name": "focus-short-height", "value": "650px" },
+      { "name": "focus-small-width", "value": "360px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action", "kind": "button", "refersTo": "button-primary",
+      "html": "<button class='ds-action'>רשימה חדשה</button>",
+      "css": ".ds-action{height:48px;padding:8px 16px;background:hsl(var(--primary));color:hsl(var(--primary-foreground));border:0;border-radius:4px;font:600 14px Manrope,Arial,sans-serif}.ds-action:hover{opacity:.9}.ds-action:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:2px}"
+    },
+    {
+      "name": "Purchase action", "kind": "button", "refersTo": "button-purchase",
+      "html": "<button class='ds-purchase'>סמן כנקנה</button>",
+      "css": ".ds-purchase{height:64px;width:100%;background:hsl(var(--success));color:hsl(var(--success-foreground));border:0;border-radius:8px;font:600 18px Manrope,Arial,sans-serif}.ds-purchase:hover{opacity:.9}.ds-purchase:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:2px}"
+    },
+    {
+      "name": "Input", "kind": "input",
+      "html": "<input class='ds-input' dir='rtl' aria-label='אימייל' placeholder='אימייל'>",
+      "css": ".ds-input{height:48px;width:100%;padding:8px 12px;background:hsl(var(--background));color:hsl(var(--foreground));border:1px solid hsl(var(--input));border-radius:6px;font:16px Manrope,Arial,sans-serif}.ds-input:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:2px}"
+    },
+    {
+      "name": "Navigation", "kind": "nav",
+      "html": "<nav class='ds-nav' dir='rtl'><button aria-current='page'>הרשימות</button><button>קניות</button><button>היסטוריה</button><button>תובנות</button></nav>",
+      "css": ".ds-nav{display:grid;grid-template-columns:repeat(4,1fr);height:76px;background:hsl(var(--card));border-top:1px solid hsl(var(--border))}.ds-nav button{border:0;background:transparent;color:hsl(var(--muted-foreground));font:12px Manrope,Arial,sans-serif}.ds-nav button[aria-current]{background:hsl(var(--primary-soft));color:hsl(var(--primary))}.ds-nav button:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:-2px}"
+    },
+    {
+      "name": "List card", "kind": "card", "refersTo": "list-card",
+      "html": "<article class='ds-card' dir='rtl'><strong>רשימת קניות</strong><p>פריטים שנותרו</p></article>",
+      "css": ".ds-card{padding:20px;background:hsl(var(--card));color:hsl(var(--foreground));border:1px solid hsl(var(--border));border-radius:8px;font:16px Manrope,Arial,sans-serif}.ds-card strong{font-size:18px}.ds-card p{color:hsl(var(--muted-foreground));font-size:14px}"
+    }
+  ],
+  "narrative": {
+    "overview": "Clear household wayfinding with product names and purchase actions first.",
+    "keyCharacteristics": ["Hebrew RTL", "Cloud White", "Cobalt navigation", "Green completion", "Full-screen focus"],
+    "dos": ["Keep product names and purchase state prominent", "Preserve reduced motion"],
+    "donts": ["Do not clip product names", "Do not claim authenticated verification from isolated checks"]
+  }
+}

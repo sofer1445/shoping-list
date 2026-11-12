@@ -15,6 +15,7 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [view, setView] = useState<"sign_in" | "sign_up">("sign_in");
   const { toast } = useToast();
 
@@ -50,23 +51,16 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError(null);
     
     const passwordErrors = validatePassword(password);
     if (passwordErrors.length > 0) {
-      toast({
-        title: "סיסמה לא תקינה",
-        description: passwordErrors.join('\n'),
-        variant: "destructive",
-      });
+      setValidationError(passwordErrors.join('. '));
       return;
     }
 
     if (password !== confirmPassword) {
-      toast({
-        title: "הסיסמאות אינן תואמות",
-        description: "יש להזין את אותה הסיסמה בשני השדות",
-        variant: "destructive",
-      });
+      setValidationError("הסיסמאות אינן תואמות. יש להזין את אותה הסיסמה בשני השדות");
       return;
     }
 
@@ -195,6 +189,9 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
 
         <TabsContent value="sign_up" className="pt-4">
           <form onSubmit={handleSignUp} className="space-y-4">
+            {validationError && (
+              <p role="alert" className="text-sm text-destructive leading-relaxed">{validationError}</p>
+            )}
             <div className="space-y-2">
               <Input
                 aria-label="אימייל"
@@ -210,9 +207,9 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
               <div className="space-y-1">
                 <Input
                   aria-label="סיסמה"
-                autoComplete="current-password"
-                className="h-12 text-base"
-                type="password"
+                  autoComplete="new-password"
+                  className="h-12 text-base"
+                  type="password"
                   placeholder="סיסמה"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -223,8 +220,8 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
                 </p>
               </div>
               <Input
-                aria-label="סיסמה"
-                autoComplete="current-password"
+                aria-label="אימות סיסמה"
+                autoComplete="new-password"
                 className="h-12 text-base"
                 type="password"
                 placeholder="אימות סיסמה"

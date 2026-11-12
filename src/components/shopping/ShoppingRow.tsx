@@ -2,6 +2,7 @@ import { Check, Pencil, UserPlus2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ShoppingItem } from "./types";
 import { useAuth } from "@/components/AuthProvider";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   item: ShoppingItem;
@@ -21,37 +22,44 @@ export const ShoppingRow = ({ item, onToggle, onEdit, attribution }: Props) => {
 
   return (
     <div
-      onClick={() => onToggle(item.id)}
       className={cn(
-        "group flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-3 min-h-[72px] cursor-pointer transition-all shadow-sm hover:shadow-md",
-        "active:scale-[0.98]",
-        item.completed && "opacity-70",
+        "group relative flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-4 min-h-[80px] transition-colors",
+        item.completed && "bg-surface-muted",
         item.justCompleted && "bg-success/10 border-success/40 animate-in fade-in zoom-in-95 duration-300",
         item.isNew && "bg-primary/5 border-primary/40 ring-1 ring-primary/20"
       )}
       dir="rtl"
     >
-      <button
+      <Button
+        variant="ghost"
+        onClick={() => onToggle(item.id)}
+        aria-label={`${item.completed ? "בטל סימון" : "סמן כנקנה"}: ${item.name}`}
+        aria-pressed={item.completed}
+        className="absolute inset-0 w-full h-full hover:bg-transparent focus-visible:ring-inset rounded-lg"
+      />
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={(e) => {
           e.stopPropagation();
           onEdit(item);
         }}
-        className="h-11 w-11 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center shrink-0 transition-colors"
-        aria-label="ערוך"
+        className="relative z-10 order-last h-11 w-11 rounded-lg text-muted-foreground shrink-0"
+        aria-label={`ערוך את ${item.name}`}
       >
         <Pencil className="h-5 w-5" />
-      </button>
+      </Button>
 
       <div className="flex-1 min-w-0 text-right">
         <div
           className={cn(
-            "font-medium text-[16px] truncate leading-tight",
+            "font-semibold text-base break-words leading-snug",
             item.completed && "line-through text-muted-foreground"
           )}
         >
           {item.name}
         </div>
-        <div className="flex items-center gap-2 justify-end mt-1 text-[12px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground">
           {item.quantity > 1 && <span className="font-semibold bg-muted px-1.5 py-0.5 rounded">×{item.quantity}</span>}
           {completedByOther ? (
             <span className="flex items-center gap-1 text-success font-medium">
@@ -71,9 +79,9 @@ export const ShoppingRow = ({ item, onToggle, onEdit, attribution }: Props) => {
 
       <div
         className={cn(
-          "h-10 w-10 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+          "order-first h-9 w-9 rounded-lg border-2 flex items-center justify-center transition-colors shrink-0",
           item.completed
-            ? "bg-success border-success text-white scale-100 shadow-sm"
+            ? "bg-success border-success text-success-foreground"
             : "border-muted-foreground/30 group-hover:border-primary group-active:scale-90"
         )}
       >

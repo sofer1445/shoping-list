@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Apple, Milk, Package, SprayCan, Wheat } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ShoppingItem } from "./types";
 import { ShoppingRow } from "./ShoppingRow";
@@ -12,34 +13,37 @@ interface Props {
   profiles?: Record<string, string>;
 }
 
-const emoji: Record<string, string> = {
-  "מזון": "🍞",
-  "ירקות ופירות": "🥦",
-  "מוצרי חלב": "🥛",
-  "ניקיון": "🧴",
-  "אחר": "📦",
+const categoryIcons: Record<string, typeof Package> = {
+  "מזון": Wheat,
+  "ירקות ופירות": Apple,
+  "מוצרי חלב": Milk,
+  "ניקיון": SprayCan,
+  "אחר": Package,
 };
 
 export const CategoryGroup = ({ category, items, onToggle, onEdit, profiles }: Props) => {
   const [open, setOpen] = useState(true);
   const remaining = items.filter((i) => !i.completed).length;
+  const Icon = categoryIcons[category] || Package;
 
   return (
     <section className="space-y-3">
-      <button
+      <Button
+        variant="ghost"
+        aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-1.5 py-2 group hover:bg-muted/30 rounded-lg transition-colors"
+        className="w-full h-auto min-h-11 flex items-center justify-between px-0 py-2 group rounded-lg transition-colors whitespace-normal gap-2"
         dir="rtl"
       >
         <div className="flex items-center gap-3">
-          <span className="text-xl filter drop-shadow-sm">{emoji[category] || "🛒"}</span>
-          <h3 className="font-display font-bold text-[16px] tracking-tight">{category}</h3>
+          <Icon className="h-5 w-5 text-primary" />
+          <h3 className="font-display font-bold text-base">{category}</h3>
           <span
             className={cn(
-              "text-[10px] font-bold tabular-nums px-2 py-0.5 rounded-full border transition-colors",
+              "text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full transition-colors shrink-0",
               remaining === 0
-                ? "bg-success/10 text-success border-success/20"
-                : "bg-muted/50 text-muted-foreground border-transparent"
+                ? "bg-success/10 text-success"
+                : "bg-muted text-muted-foreground"
             )}
           >
             {remaining === 0 ? "הושלם" : `${remaining} נותרו`}
@@ -47,11 +51,11 @@ export const CategoryGroup = ({ category, items, onToggle, onEdit, profiles }: P
         </div>
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-muted-foreground/60 transition-transform duration-300",
+            "h-4 w-4 text-muted-foreground transition-transform duration-300",
             !open && "-rotate-90"
           )}
         />
-      </button>
+      </Button>
       {open && (
         <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
           {items.map((item) => (
