@@ -64,7 +64,6 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
     enabled: !!user,
     staleTime: 60_000,
     gcTime: 10 * 60_000,
-    placeholderData: (prev) => prev,
   });
 
   const lists = query.data ?? [];
@@ -86,7 +85,8 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
   const grouped = useMemo(() => {
     const map = new Map<string, ArchivedList[]>();
     lists.forEach((l) => {
-      const label = format(new Date(l.archived_at), "MMMM yyyy", { locale: he });
+      const date = new Date(l.archived_at);
+      const label = Number.isNaN(date.getTime()) ? "ללא תאריך" : format(date, "MMMM yyyy", { locale: he });
       map.set(label, [...(map.get(label) || []), l]);
     });
     return Array.from(map.entries());
@@ -104,7 +104,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
   }, [lists]);
 
   const buyAgain = async (list: ArchivedList) => {
-    if (!user) return;
+    if (!user || busy) return;
     setBusy(list.id);
     try {
       const { data: newList, error } = await supabase
@@ -141,6 +141,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
   };
 
   const restoreList = async (list: ArchivedList) => {
+    if (busy) return;
     setBusy(list.id);
     try {
       const { error: listError } = await supabase
@@ -229,7 +230,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
                 <div key={list.id} className="surface-card p-5 space-y-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="text-[11px] text-muted-foreground shrink-0">
-                      {formatDistanceToNow(new Date(list.archived_at), {
+                      {Number.isNaN(new Date(list.archived_at).getTime()) ? "ללא תאריך" : formatDistanceToNow(new Date(list.archived_at), {
                         addSuffix: true,
                         locale: he,
                       })}
@@ -247,13 +248,13 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
                       {preview.map((n, i) => (
                         <span
                           key={i}
-                          className="text-[11px] px-2 py-1 rounded-lg bg-muted text-muted-foreground"
+                          className="text-[11px] px-2 py-1 rounded-lg bg-muted text-muted-foreground max-w-full [overflow-wrap:anywhere]"
                         >
                           {n}
                         </span>
                       ))}
                       {list.items.length > 3 && (
-                        <span className="text-[11px] px-2 py-1 rounded-lg bg-muted text-muted-foreground">
+                        <span className="text-[11px] px-2 py-1 rounded-lg bg-muted text-muted-foreground max-w-full [overflow-wrap:anywhere]">
                           +{list.items.length - 3}
                         </span>
                       )}
@@ -263,7 +264,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
                   <div className="flex gap-2">
                     <Button
                       onClick={() => buyAgain(list)}
-                      disabled={busy === list.id || list.items.length === 0}
+                      disabled={!!busy || list.items.length === 0}
                       size="sm"
                       className="flex-1 rounded-xl"
                     >
@@ -272,7 +273,7 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
                     </Button>
                     <Button
                       onClick={() => restoreList(list)}
-                      disabled={busy === list.id}
+                      disabled={!!busy}
                       size="sm"
                       variant="outline"
                       className="rounded-xl"

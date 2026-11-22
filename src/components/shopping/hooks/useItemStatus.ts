@@ -1,71 +1,40 @@
-
+import { useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingItem } from "../types";
 import { useAuth } from "@/components/AuthProvider";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { useToast } from "@/components/ui/use-toast";
 
-export const useItemStatus = (
-  items: ShoppingItem[],
-  setItems: React.Dispatch<React.SetStateAction<ShoppingItem[]>>
-) => {
+export const useItemStatus = (items: ShoppingItem[], setItems: React.Dispatch<React.SetStateAction<ShoppingItem[]>>) => {
   const { user } = useAuth();
   const { logActivity } = useActivityLog();
   const { toast } = useToast();
+  const pending = useRef(new Set<string>());
 
   const toggleItem = async (id: string) => {
-    const item = items.find((i) => i.id === id);
-    if (!item) return;
-
+    const item = items.find((value) => value.id === id);
+    if (!item || !user || pending.current.has(id)) return false;
+    pending.current.add(id);
+    const fields = {
+      completed: !item.completed,
+      completed_at: !item.completed ? new Date().toISOString() : null,
+      completed_by: !item.completed ? user.id : null,
+    };
     try {
-      const { error } = await supabase
-        .from("shopping_items")
-        .update({
-          completed: !item.completed,
-          completed_at: !item.completed ? new Date().toISOString() : null,
-          completed_by: !item.completed ? user?.id : null,
-        })
-        .eq("id", id);
-
+      const { error } = await supabase.from("shopping_items").update(fields)
+        .eq("id", id).eq("completed", item.completed).select("id").single();
       if (error) throw error;
-
-      if (!item.completed) {
-        await logActivity('item_completed', { 
-          item_id: id,
-          item_name: item.name 
-        });
-      }
-
-      setItems((prevItems) =>
-        prevItems.map((i) =>
-          i.id === id
-            ? {
-                ...i,
-                completed: !item.completed,
-                completed_at: !item.completed ? new Date().toISOString() : null,
-                completed_by: !item.completed ? user?.id || null : null,
-                justCompleted: !item.completed,
-              }
-            : i
-        )
-      );
-
-      setTimeout(() => {
-        setItems((prevItems) =>
-          prevItems.map((i) =>
-            i.id === id ? { ...i, justCompleted: false } : i
-          )
-        );
-      }, 3000);
+      setItems((previous) => previous.map((value) => value.id === id
+        ? { ...value, ...fields, justCompleted: !item.completed } : value));
+      if (!item.completed) void logActivity("item_completed", { item_id: id, item_name: item.name });
+      window.dispatchEvent(new CustomEvent("shopping-list-updated"));
+      setTimeout(() => setItems((previous) => previous.map((value) => value.id === id
+        ? { ...value, justCompleted: false } : value)), 3000);
+      return true;
     } catch (error) {
-      console.error("Error toggling item:", error);
-      toast({
-        title: "העדכון לא נשמר",
-        description: "ייתכן שהרשימה השתנתה במכשיר אחר. נסה שוב.",
-        variant: "destructive",
-      });
-    }
+      toast({ title: "העדכון לא נשמר", description: "ייתכן שהרשימה השתנתה במכשיר אחר. נסה שוב.", variant: "destructive" });
+      return false;
+    } finally { pending.current.delete(id); }
   };
-
   return { toggleItem };
 };

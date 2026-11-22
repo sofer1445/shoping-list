@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -79,7 +79,6 @@ export const InsightsScreen = () => {
     enabled: !!user,
     staleTime: 5 * 60_000,
     gcTime: 10 * 60_000,
-    placeholderData: (prev) => prev,
   });
 
   const analytics = query.data?.analytics ?? [];
@@ -93,6 +92,12 @@ export const InsightsScreen = () => {
     await queryClient.invalidateQueries({ queryKey: ["insights", user?.id] });
   }, [queryClient, user?.id]);
 
+
+  useEffect(() => {
+    const refresh = () => { void load(); };
+    window.addEventListener("shopping-list-updated", refresh);
+    return () => window.removeEventListener("shopping-list-updated", refresh);
+  }, [load]);
 
   const topItem = analytics[0];
 
@@ -120,7 +125,7 @@ export const InsightsScreen = () => {
     .slice(0, 4);
 
   const runAnalysis = async () => {
-    if (!user) return;
+    if (!user || running) return;
     setRunning(true);
     try {
       const { data, error } = await supabase.functions.invoke("analytics-processor", {

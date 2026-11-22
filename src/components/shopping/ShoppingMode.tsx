@@ -58,37 +58,24 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
     items,
     setItems,
     currentListId,
-    setCurrentListId,
     fetchItems,
     isLoading,
     hasError,
     isOfflineMode,
   } = shopping;
 
-  // Sync external listId prop into hook
-  useEffect(() => {
-    if (listId && listId !== currentListId) {
-      setCurrentListId(listId);
-      setItems([]);
-    }
-  }, [listId]);
-
-  // Sync back to parent when hook decides on an initial list
-  useEffect(() => {
-    if (currentListId && currentListId !== listId) {
-      onSetListId(currentListId);
-    }
-  }, [currentListId]);
-
   // Get list name
   useEffect(() => {
     if (!currentListId) return;
+    let active = true;
+    setListName("רשימת קניות");
     supabase
       .from("shopping_lists")
       .select("name")
       .eq("id", currentListId)
       .maybeSingle()
-      .then(({ data }) => data?.name && setListName(data.name));
+      .then(({ data }) => { if (active && data?.name) setListName(data.name); });
+    return () => { active = false; };
   }, [currentListId]);
 
   // Realtime updates
@@ -153,7 +140,19 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
     }
   };
 
-  if (isLoading || !currentListId) {
+  useEffect(() => {
+    if (editing && !items.some((item) => item.id === editing.id)) setEditing(null);
+  }, [items, editing]);
+
+  if (!currentListId) return (
+    <div className="px-5 py-12 text-center space-y-4" dir="rtl">
+      <ShoppingBag className="h-10 w-10 mx-auto text-muted-foreground" />
+      <h1 className="screen-heading">בחר רשימה לקנייה</h1>
+      <Button onClick={onBackToLists}>לרשימות שלי</Button>
+    </div>
+  );
+
+  if (isLoading) {
     return (
       <div className="px-3 space-y-3 pt-3" dir="rtl">
         <Skeleton className="h-16 rounded-2xl" />
@@ -165,7 +164,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
   }
 
   // ===== Immersive focus mode: full-screen, minimal chrome =====
-  if (viewMode === "focus") {
+  if (viewMode === "focus" && !hasError) {
     return (
       <div
         className="fixed inset-0 z-[60] flex flex-col bg-background"
@@ -327,7 +326,7 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
             </Button>
           )}
 
-          {viewMode === "list" && items.some((i) => !i.completed) && (
+          {!showCompleted && items.some((i) => !i.completed) && (
             <ExportToNewListButton
               compact
               listId={currentListId}
@@ -380,14 +379,16 @@ export const ShoppingMode = ({ listId, onSetListId, onBackToLists, onFinished }:
             </Button>
             <div className="flex items-center gap-2 text-right">
               <div>
-                <div className="text-sm font-semibold">מצב לא מקוון</div>
-                <div className="text-[11px] text-muted-foreground">מוצגים הפריטים האחרונים שנשמרו במכשיר</div>
+                <div className="text-sm font-semibold">{hasError ? "לא הצלחנו לטעון את הרשימה" : "מצב לא מקוון"}</div>
+                <div className="text-[11px] text-muted-foreground">{hasError ? "בדוק את החיבור ונסה שוב" : "מוצגים הפריטים האחרונים שנשמרו במכשיר"}</div>
               </div>
               <WifiOff className="h-5 w-5 text-muted-foreground shrink-0" />
             </div>
           </div>
         )}
-        {total === 0 ? (
+        {hasError ? (
+          <p className="text-sm text-muted-foreground text-center py-8">הפריטים לא נטענו. נסה שוב כדי להמשיך.</p>
+        ) : total === 0 ? (
           <div className="py-12 px-4 text-center space-y-3 mt-6">
             <ShoppingBag className="h-10 w-10 mx-auto text-muted-foreground" />
             <div className="font-display font-semibold">הרשימה ריקה</div>

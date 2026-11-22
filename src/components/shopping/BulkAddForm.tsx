@@ -5,9 +5,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { parseBulkItems } from "@/utils/shoppingValidation";
 
 interface BulkAddFormProps {
-  onAdd: (item: Omit<ShoppingItem, "id" | "completed" | "isNew">) => void;
+  onAdd: (item: Omit<ShoppingItem, "id" | "completed" | "isNew">) => Promise<boolean>;
   categories: string[];
   items: ShoppingItem[];
 }
@@ -39,34 +40,26 @@ export const BulkAddForm = ({ onAdd, categories, items }: BulkAddFormProps) => {
   };
 
   const handleBulkAdd = async () => {
-    if (!bulkItems.trim()) return;
+    if (!bulkItems.trim() || isProcessing) return;
     setIsProcessing(true);
     
-    const lines = bulkItems.split('\n').map(l => l.trim()).filter(Boolean);
-    const existingItemNames = new Set(items.filter(i => !i.completed).map(i => i.name.toLowerCase()));
+    const { entries, duplicates, invalid } = parseBulkItems(bulkItems, items);
     
     let addedCount = 0;
-    let skipCount = 0;
+    const skipCount = duplicates;
+    const failed: string[] = [];
 
-    for (const line of lines) {
-      const match = line.match(/^(.+?)\s+(\d+)$/);
-      const name = match ? match[1].trim() : line;
-      const quantity = match ? parseInt(match[2]) : 1;
-
-      if (existingItemNames.has(name.toLowerCase())) {
-        skipCount++;
-        continue;
-      }
-
-      onAdd({
+    for (const { name, quantity } of entries) {
+      const saved = await onAdd({
         name,
         quantity,
         category: getCategory(name),
       });
-      addedCount++;
+      if (saved) addedCount++;
+      else failed.push(`${name} ${quantity}`);
     }
 
-    setBulkItems("");
+    setBulkItems(failed.join("\n"));
     setIsProcessing(false);
     
     if (addedCount > 0) {
@@ -82,6 +75,7 @@ export const BulkAddForm = ({ onAdd, categories, items }: BulkAddFormProps) => {
         variant: "destructive"
       });
     }
+    if (invalid > 0) toast({ title: "כמות לא תקינה", description: `לא נוספו ${invalid} שורות. הכמות חייבת להיות מספר שלם של 1 לפחות`, variant: "destructive" });
   };
 
   return (
@@ -100,6 +94,8 @@ export const BulkAddForm = ({ onAdd, categories, items }: BulkAddFormProps) => {
           </div>
           <Textarea
             value={bulkItems}
+            aria-label="רשימת מוצרים"
+            disabled={isProcessing}
             onChange={(e) => setBulkItems(e.target.value)}
             placeholder="חלב&#10;לחם 2&#10;עגבניות"
             className="min-h-[140px] text-right font-medium resize-none rounded-xl border-border/60 focus:ring-primary/20"
@@ -112,7 +108,7 @@ export const BulkAddForm = ({ onAdd, categories, items }: BulkAddFormProps) => {
           className="w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-primary/10 transition-all active:scale-[0.98]"
         >
           {isProcessing ? (
-            <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+            <div className="animate-spin h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full" />
           ) : (
             <>
               <Wand2 size={18} />

@@ -56,6 +56,7 @@ export const ShoppingList = () => {
   const shoppingView = useMemo(
     () => (
       <ShoppingMode
+        key={activeListId ?? "no-list"}
         listId={activeListId}
         onSetListId={setActiveListId}
         onBackToLists={backToLists}

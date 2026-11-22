@@ -7,6 +7,7 @@ import { BulkAddForm } from "./BulkAddForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { hasDuplicateItem, isValidQuantity } from "@/utils/shoppingValidation";
 import {
   Select,
   SelectContent,
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/select";
 
 interface AddItemFormProps {
-  onAdd: (item: Omit<ShoppingItem, "id" | "completed" | "isNew">) => void;
+  onAdd: (item: Omit<ShoppingItem, "id" | "completed" | "isNew">) => Promise<boolean>;
   categories: string[];
   items: ShoppingItem[];
 }
@@ -27,6 +28,8 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
   const [selectedCategory, setSelectedCategory] = useState(categories[0]);
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [recommendationSystem] = useState(() => new RecommendationSystem());
+  const [saving, setSaving] = useState(false);
+  const duplicate = hasDuplicateItem(items, newItemName);
 
   useEffect(() => {
     if (newItemName) {
@@ -36,23 +39,19 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
     }
   }, [newItemName]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const normalizedName = newItemName.trim().toLocaleLowerCase("he");
-    if (!normalizedName || newItemQuantity < 1) return;
-    if (
-      items.some(
-        (item) =>
-          !item.completed &&
-          item.name.trim().toLocaleLowerCase("he") === normalizedName
-      )
-    ) return;
+    if (!normalizedName || !isValidQuantity(newItemQuantity) || duplicate || saving) return;
 
-    onAdd({
+    setSaving(true);
+    const saved = await onAdd({
       name: newItemName.trim(),
       quantity: newItemQuantity,
       category: selectedCategory,
     });
+    setSaving(false);
+    if (!saved) return;
 
     recommendationSystem.addPurchaseData([newItemName]);
     
@@ -61,13 +60,16 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
     setRecommendations([]);
   };
 
-  const handleRecommendationSelect = (item: string) => {
-    onAdd({
+  const handleRecommendationSelect = async (item: string) => {
+    if (saving) return;
+    setSaving(true);
+    const saved = await onAdd({
       name: item,
       quantity: 1,
       category: categories[0],
     });
-    recommendationSystem.addPurchaseData([newItemName, item]);
+    setSaving(false);
+    if (saved) recommendationSystem.addPurchaseData([newItemName, item]);
   };
 
   const handleRecommendationDismiss = (item: string) => {
@@ -93,17 +95,20 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
             <div className="flex gap-2">
               <Input
                 type="number"
+                aria-label="כמות"
                 value={newItemQuantity}
                 onChange={(e) => setNewItemQuantity(Number(e.target.value))}
                 min="1"
+                step="1"
                 className="w-20 text-center font-bold h-12 rounded-xl"
               />
               <Input
                 type="text"
+                aria-label="שם הפריט"
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 placeholder="מה להוסיף?"
-                className="flex-1 h-12 rounded-xl text-[16px]"
+                className="flex-1 min-w-0 h-12 rounded-xl text-[16px]"
               />
             </div>
 
@@ -120,22 +125,17 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
               </SelectContent>
             </Select>
 
+            {duplicate && <p role="status" className="text-sm text-destructive">הפריט כבר נמצא ברשימה</p>}
             <Button
               type="submit"
               size="lg"
               className="w-full rounded-xl h-12 gap-2 text-base font-bold shadow-lg shadow-primary/20"
               disabled={
                 !newItemName.trim() ||
-                newItemQuantity < 1 ||
-                items.some(
-                  (item) =>
-                    !item.completed &&
-                    item.name.trim().toLocaleLowerCase("he") ===
-                      newItemName.trim().toLocaleLowerCase("he")
-                )
+                !isValidQuantity(newItemQuantity) || saving || duplicate
               }
             >
-              <span>הוסף לרשימה</span>
+              <span>{saving ? "מוסיף..." : "הוסף לרשימה"}</span>
               <Plus size={20} strokeWidth={3} />
             </Button>
           </form>

@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { FileOutput } from "lucide-react";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
@@ -16,8 +17,13 @@ export const ExportToNewListButton = ({ listId, items, onExport, compact }: Expo
 
   const { toast } = useToast();
   const { logActivity } = useActivityLog();
+  const [exporting, setExporting] = useState(false);
+  const pending = useRef(false);
 
   const handleExport = async () => {
+    if (pending.current) return;
+    pending.current = true;
+    setExporting(true);
     try {
       // Get active (not completed) items
       const activeItems = items.filter(item => !item.completed);
@@ -70,11 +76,11 @@ export const ExportToNewListButton = ({ listId, items, onExport, compact }: Expo
           archived: true,
           archived_at: new Date().toISOString(),
         })
-        .eq("id", listId);
+        .eq("id", listId).select("id").single();
 
       if (archiveError) throw archiveError;
 
-      await logActivity('list_created', { list_id: newList.id, exported_from: listId });
+      void logActivity('list_created', { list_id: newList.id, exported_from: listId });
 
       toast({
         title: "רשימה חדשה נוצרה",
@@ -89,6 +95,9 @@ export const ExportToNewListButton = ({ listId, items, onExport, compact }: Expo
         description: "לא ניתן היה ליצור רשימה חדשה",
         variant: "destructive",
       });
+    } finally {
+      pending.current = false;
+      setExporting(false);
     }
   };
 
@@ -98,7 +107,8 @@ export const ExportToNewListButton = ({ listId, items, onExport, compact }: Expo
         variant="ghost"
         size="icon"
         onClick={handleExport}
-        className="h-8 w-8 rounded-full shrink-0"
+        disabled={exporting}
+        className="h-11 w-11 rounded-lg shrink-0"
         aria-label="ייצא את הפריטים שנותרו לרשימה חדשה"
         title="ייצא את הפריטים שנותרו לרשימה חדשה"
       >
@@ -112,6 +122,7 @@ export const ExportToNewListButton = ({ listId, items, onExport, compact }: Expo
       variant="outline"
       size="sm"
       onClick={handleExport}
+        disabled={exporting}
       className="gap-2"
     >
       <FileOutput size={16} />

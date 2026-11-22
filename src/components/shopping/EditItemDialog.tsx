@@ -17,6 +17,7 @@ import {
 } from "../ui/select";
 import { ShoppingItem } from "./types";
 import { Label } from "../ui/label";
+import { isValidQuantity } from "@/utils/shoppingValidation";
 
 interface EditItemDialogProps {
   item: ShoppingItem | null;
@@ -34,6 +35,7 @@ export const EditItemDialog = ({
   categories,
 }: EditItemDialogProps) => {
   const [editedItem, setEditedItem] = React.useState<ShoppingItem | null>(null);
+  const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     setEditedItem(item);
@@ -68,7 +70,7 @@ export const EditItemDialog = ({
               onChange={(e) =>
                 setEditedItem({
                   ...editedItem,
-                  quantity: parseInt(e.target.value) || 0,
+                  quantity: Number(e.target.value),
                 })
               }
               className="text-right h-12 rounded-xl text-[16px]"
@@ -100,13 +102,15 @@ export const EditItemDialog = ({
             type="submit"
             size="lg"
             className="flex-1 rounded-xl h-12 font-bold"
-            disabled={!editedItem.name.trim() || editedItem.quantity < 1}
+            disabled={saving || !editedItem.name.trim() || !isValidQuantity(editedItem.quantity)}
             onClick={async () => {
-              const saved = await onSave(editedItem);
-              if (saved) onClose();
+              if (saving) return;
+              setSaving(true);
+              try { if (await onSave(editedItem)) onClose(); }
+              finally { setSaving(false); }
             }}
           >
-            שמור שינויים
+            {saving ? "שומר..." : "שמור שינויים"}
           </Button>
           <Button
             variant="outline"

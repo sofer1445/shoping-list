@@ -37,11 +37,14 @@ export const useItemsFetching = () => {
 
       console.log("Fetched items successfully:", data?.length || 0, "items");
       const items = data || [];
-      saveItemsToLocalStorage(items);
+      saveItemsToLocalStorage(items, currentListId);
       return { items, isOffline: false, hasError: false };
     } catch (error) {
       console.error("Error in fetchItems:", error);
-      const offlineItems = handleOfflineMode();
+      // Only transport failures may use a backup; a permission error must not expose cached data.
+      const networkFailure = error instanceof TypeError ||
+        (typeof error === "object" && error !== null && "message" in error && /fetch|network|offline/i.test(String(error.message)));
+      const offlineItems = networkFailure ? handleOfflineMode(currentListId) : [];
       return {
         items: offlineItems,
         isOffline: true,

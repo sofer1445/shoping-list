@@ -33,24 +33,9 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
     return errors;
   };
 
-  const checkEmailExists = async (email: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-        },
-      });
-      // If we get here without an error, the email exists
-      return !error;
-    } catch {
-      // If there's an error, treat it as email not existing
-      return false;
-    }
-  };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setValidationError(null);
     
     const passwordErrors = validatePassword(password);
@@ -67,19 +52,8 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
     try {
       setLoading(true);
       
-      // Check if email exists before attempting to sign up
-      const emailExists = await checkEmailExists(email);
-      if (emailExists) {
-        toast({
-          title: "כתובת האימייל כבר רשומה",
-          description: "אפשר להתחבר עם הכתובת הזו או להשתמש בכתובת אחרת",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: {
           emailRedirectTo: redirectTo,
@@ -88,12 +62,13 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
 
       if (error) throw error;
 
-      if (data) {
+      if (data.session) {
         toast({
           title: "ההרשמה הושלמה",
           description: "אפשר להתחבר עכשיו עם הפרטים שלך",
         });
-        setView("sign_in");
+      } else {
+        setValidationError("החשבון נוצר, אך נדרש אישור במייל לפני ההתחברות");
       }
     } catch (error: any) {
       toast({
@@ -108,10 +83,11 @@ export const AuthForms = ({ redirectTo }: AuthFormsProps) => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     try {
       setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 

@@ -48,7 +48,7 @@ export const ListsHome = ({ onOpenList }: Props) => {
     });
 
   const createList = async () => {
-    if (!user || !name.trim()) return;
+    if (!user || !name.trim() || creating) return;
     setCreating(true);
     try {
       const { data, error } = await supabase
@@ -60,6 +60,7 @@ export const ListsHome = ({ onOpenList }: Props) => {
       toast({ title: "רשימה נוצרה", description: name.trim() });
       setName("");
       setOpen(false);
+      window.dispatchEvent(new CustomEvent("shopping-list-updated"));
       await refetch();
       if (data) onOpenList(data.id);
     } catch (e: any) {
@@ -75,16 +76,17 @@ export const ListsHome = ({ onOpenList }: Props) => {
   };
 
   const saveRename = async () => {
-    if (!renaming || !renameValue.trim()) return;
+    if (!renaming || !renameValue.trim() || savingRename) return;
     setSavingRename(true);
     try {
       const { error } = await supabase
         .from("shopping_lists")
         .update({ name: renameValue.trim() })
-        .eq("id", renaming.id);
+        .eq("id", renaming.id).select("id").single();
       if (error) throw error;
       toast({ title: "השם עודכן", description: renameValue.trim() });
       setRenaming(null);
+      window.dispatchEvent(new CustomEvent("shopping-list-updated"));
       await refetch();
     } catch (e: any) {
       fail(e);
@@ -94,7 +96,7 @@ export const ListsHome = ({ onOpenList }: Props) => {
   };
 
   const duplicateList = async (list: ListSummary) => {
-    if (!user) return;
+    if (!user || busy) return;
     setBusy(true);
     try {
       const { data: newList, error: createError } = await supabase
@@ -125,6 +127,7 @@ export const ListsHome = ({ onOpenList }: Props) => {
       }
 
       toast({ title: "הרשימה שוכפלה", description: `${list.name} (עותק)` });
+      window.dispatchEvent(new CustomEvent("shopping-list-updated"));
       await refetch();
     } catch (e: any) {
       fail(e);
@@ -134,14 +137,16 @@ export const ListsHome = ({ onOpenList }: Props) => {
   };
 
   const archiveList = async (list: ListSummary) => {
+    if (busy) return;
     setBusy(true);
     try {
       const { error } = await supabase
         .from("shopping_lists")
         .update({ archived: true, archived_at: new Date().toISOString() })
-        .eq("id", list.id);
+        .eq("id", list.id).select("id").single();
       if (error) throw error;
       toast({ title: "הרשימה הועברה לארכיון", description: list.name });
+      window.dispatchEvent(new CustomEvent("shopping-list-updated"));
       await refetch();
     } catch (e: any) {
       fail(e);
@@ -151,7 +156,7 @@ export const ListsHome = ({ onOpenList }: Props) => {
   };
 
   const confirmDelete = async () => {
-    if (!deleting) return;
+    if (!deleting || busy) return;
     setBusy(true);
     try {
       const { error: itemsError } = await supabase
@@ -171,6 +176,7 @@ export const ListsHome = ({ onOpenList }: Props) => {
 
       toast({ title: "הרשימה נמחקה", description: deleting.name });
       setDeleting(null);
+      window.dispatchEvent(new CustomEvent("shopping-list-updated"));
       await refetch();
     } catch (e: any) {
       fail(e);

@@ -144,11 +144,10 @@ export const useLists = () => {
 
   const query = useQuery({
     queryKey: ["lists", user?.id],
-    queryFn: () => loadLists(user!.id),
+    queryFn: () => user ? loadLists(user.id) : Promise.resolve([]),
     enabled: !!user,
     staleTime: 60_000,
     gcTime: 10 * 60_000,
-    placeholderData: (prev) => prev,
   });
 
   const refetch = useCallback(async () => {

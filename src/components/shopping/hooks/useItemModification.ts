@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { ShoppingItem } from "../types";
 import { useActivityLog } from "@/hooks/useActivityLog";
+import { hasDuplicateItem, isValidQuantity, normalizeItemName } from "@/utils/shoppingValidation";
 
 export const useItemModification = (
   items: ShoppingItem[],
@@ -45,8 +46,8 @@ export const useItemModification = (
   };
 
   const handleSaveEdit = async (updatedItem: ShoppingItem) => {
-    const normalizedName = updatedItem.name.trim().toLocaleLowerCase("he");
-    if (!normalizedName || updatedItem.quantity < 1) {
+    const normalizedName = normalizeItemName(updatedItem.name);
+    if (!normalizedName || !isValidQuantity(updatedItem.quantity)) {
       toast({
         title: "פרטים לא תקינים",
         description: "יש להזין שם פריט וכמות של 1 לפחות",
@@ -55,12 +56,7 @@ export const useItemModification = (
       return false;
     }
 
-    const duplicate = items.some(
-      (item) =>
-        item.id !== updatedItem.id &&
-        !item.completed &&
-        item.name.trim().toLocaleLowerCase("he") === normalizedName
-    );
+    const duplicate = hasDuplicateItem(items, updatedItem.name, updatedItem.id);
     if (duplicate) {
       toast({
         title: "פריט כבר קיים",
@@ -71,18 +67,19 @@ export const useItemModification = (
     }
 
     try {
-      const { isNew, justCompleted, ...itemForDb } = updatedItem;
-      
+      // Persist editable fields only; an edit must not undo another shopper's completion.
+      const itemForDb = { name: updatedItem.name.trim(), quantity: updatedItem.quantity, category: updatedItem.category };
       const { error } = await supabase
         .from("shopping_items")
         .update(itemForDb)
-        .eq("id", updatedItem.id);
+        .eq("id", updatedItem.id)
+        .select("id").single();
 
       if (error) throw error;
 
       setItems((prev) =>
         prev.map((item) =>
-          item.id === updatedItem.id ? updatedItem : item
+          item.id === updatedItem.id ? { ...item, ...itemForDb } : item
         )
       );
 
@@ -90,6 +87,7 @@ export const useItemModification = (
         title: "פריט עודכן",
         description: `${updatedItem.name} עודכן בהצלחה`,
       });
+      window.dispatchEvent(new CustomEvent("shopping-list-updated"));
       return true;
     } catch (error) {
       console.error("Error updating item:", error);

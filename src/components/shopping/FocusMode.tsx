@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronRight, Hand, PartyPopper, SkipForward } from "lucide-react";
+import { Check, ChevronRight, Hand, PartyPopper, SkipForward, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ interface Props {
   items: ShoppingItem[];
   total: number;
   done: number;
-  onToggle: (id: string) => void;
+  onToggle: (id: string) => boolean | Promise<boolean>;
   onEdit: (item: ShoppingItem) => void;
   profiles: Record<string, string>;
   onFinish?: () => void;
@@ -31,11 +31,12 @@ export const FocusMode = ({
 }: Props) => {
   // Only unpurchased items, stable order
   const queue = useMemo(() => items.filter((i) => !i.completed), [items]);
-  const [index, setIndex] = useState(0);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [dx, setDx] = useState(0);
   const [marking, setMarking] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const startX = useRef<number | null>(null);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const displacement = useRef(0);
 
   useEffect(() => {
     let seen = true;
@@ -56,14 +57,57 @@ export const FocusMode = ({
     }
   }, []);
 
-  useEffect(() => {
-    if (index > queue.length - 1) setIndex(Math.max(0, queue.length - 1));
-  }, [queue.length, index]);
+  const item = queue.find((value) => value.id === activeId) ?? queue[0];
+  const index = item ? queue.findIndex((value) => value.id === item.id) : 0;
 
-  const item = queue[index];
-
+  const resetGesture = () => {
+    start.current = null;
+    displacement.current = 0;
+    setDx(0);
+  };
   const go = (dir: 1 | -1) => {
-    if (queue.length === 0) return;
+    if (!queue.length || marking) return;
+    setActiveId(queue[(index + dir + queue.length) % queue.length].id);
+    resetGesture();
+  };
+
+  const markDone = async () => {
+    if (!item || marking) return;
+    setMarking(true);
+    const next = queue[index + 1] ?? queue[0];
+    try {
+      const saved = await onToggle(item.id);
+      if (saved && next) setActiveId(next.id);
+    } finally {
+      setMarking(false);
+      resetGesture();
+    }
+  };
+
+  const onPointerDown = (event: React.PointerEvent) => {
+    if (!event.isPrimary || event.button !== 0 || marking) return;
+    start.current = { x: event.clientX, y: event.clientY };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const onPointerMove = (event: React.PointerEvent) => {
+    if (!start.current) return;
+    const moved = event.clientX - start.current.x;
+    if (Math.abs(event.clientY - start.current.y) > Math.abs(moved) + 12) {
+      resetGesture();
+      return;
+    }
+    displacement.current = moved;
+    setDx(Math.max(-120, Math.min(120, moved)));
+  };
+  const onPointerUp = () => {
+    if (!start.current) return;
+    const moved = displacement.current;
+    resetGesture();
+    // RTL: right is next, left is previous. Cancellation never navigates.
+    if (Math.abs(moved) > 70) go(moved > 0 ? 1 : -1);
+  };
+
+  if (queue.length === 0) return;
     setIndex((i) => (i + dir + queue.length) % queue.length);
     setDx(0);
   };
@@ -83,11 +127,11 @@ export const FocusMode = ({
     startX.current = e.clientX;
   };
   const onPointerMove = (e: React.PointerEvent) => {
-    if (startX.current === null) return;
+    if (start.current === null) return;
     setDx(e.clientX - startX.current);
   };
   const onPointerUp = () => {
-    if (startX.current === null) return;
+    if (start.current === null) return;
     const moved = dx;
     startX.current = null;
     if (Math.abs(moved) > 70) {
@@ -132,17 +176,21 @@ export const FocusMode = ({
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerCancel={resetGesture}
         onDoubleClick={() => onEdit(item)}
         style={{
           transform: `translateX(${dx}px) rotate(${dx / 60}deg)`,
-          transition: startX.current === null ? "transform 220ms ease" : "none",
+          transition: start.current === null ? "transform 220ms ease" : "none",
         }}
         className={cn(
           "relative focus-product touch-pan-y [overscroll-behavior-x:contain]",
           marking && "opacity-70"
         )}
       >
+        <Button variant="ghost" size="icon" className="absolute top-2 left-2 h-11 w-11" aria-label="עריכת הפריט"
+          onPointerDown={(event) => event.stopPropagation()} onClick={() => onEdit(item)} disabled={marking}>
+          <Pencil className="h-4 w-4" />
+        </Button>
         <span className="text-sm font-medium text-muted-foreground shrink-0">{item.category || "אחר"}</span>
         <div className="focus-visual">
           <div className="scale-[4]">
@@ -170,11 +218,12 @@ export const FocusMode = ({
       <div className="focus-actions space-y-2">
         <Button
           onClick={markDone}
+          disabled={marking}
           size="lg"
           className="w-full h-16 rounded-lg text-lg font-semibold bg-success text-success-foreground hover:bg-success/90"
         >
           <Check className="h-6 w-6" />
-          סמן כנקנה
+          {marking ? "שומר..." : "סמן כנקנה"}
         </Button>
 
         <div className="flex items-center">
@@ -182,6 +231,7 @@ export const FocusMode = ({
             variant="ghost"
             className="flex-1 h-11 rounded-2xl text-muted-foreground text-[13px]"
             onClick={() => go(-1)}
+            disabled={marking || queue.length < 2}
             aria-label="הפריט הקודם"
           >
             <ChevronRight className="h-4 w-4" />
@@ -191,6 +241,7 @@ export const FocusMode = ({
             variant="ghost"
             className="flex-1 h-11 rounded-2xl text-muted-foreground text-[13px]"
             onClick={() => go(1)}
+            disabled={marking || queue.length < 2}
             aria-label="דלג לפריט הבא"
           >
             דלג

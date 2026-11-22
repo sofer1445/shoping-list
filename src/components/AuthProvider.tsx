@@ -1,122 +1,49 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { useToast } from "@/components/ui/use-toast";
 
-type AuthContextType = {
-  user: User | null;
-};
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
+const AuthContext = createContext<{ user: User | null } | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const { toast } = useToast();
+  const previousUser = useRef<string | null>(null);
 
   useEffect(() => {
-    // Initialize the session
-    const initSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session error:", error);
-          // Clear any stale session data
-          setUser(null);
-          localStorage.removeItem('supabase.auth.token');
-          
-          if (location.pathname !== '/auth') {
-            navigate('/auth', { replace: true });
-          }
-          return;
-        }
-        
-        setUser(session?.user ?? null);
-        
-        if (!session && location.pathname !== '/auth') {
-          navigate('/auth', { replace: true });
-        }
-      } catch (error: any) {
-        console.error("Error getting session:", error);
-        // Clear any stale session data
-        setUser(null);
-        localStorage.removeItem('supabase.auth.token');
-        
-        toast({
-          title: "שגיאת התחברות",
-          description: "אירעה שגיאה במהלך ההתחברות. אנא התחבר מחדש.",
-          variant: "destructive",
-        });
-        
-        if (location.pathname !== '/auth') {
-          navigate('/auth', { replace: true });
-        }
-      } finally {
-        setIsLoading(false);
-      }
+    let active = true;
+    let authEventReceived = false;
+    const update = (next: User | null) => {
+      if (!active) return;
+      if (previousUser.current !== (next?.id ?? null)) queryClient.clear();
+      previousUser.current = next?.id ?? null;
+      setUser(next);
+      setIsLoading(false);
     };
-
-    initSession();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session);
-      
-      if (event === 'SIGNED_OUT') {
-        // Clear any stale session data
-        setUser(null);
-        localStorage.removeItem('supabase.auth.token');
-        
-        // Try to sign out from the server
-        try {
-          await supabase.auth.signOut();
-        } catch (error) {
-          console.error("Error during server signout:", error);
-        }
-        
-        if (location.pathname !== '/auth') {
-          navigate('/auth', { replace: true });
-        }
-      } else if (event === 'SIGNED_IN') {
-        setUser(session?.user ?? null);
-        if (location.pathname === '/auth') {
-          navigate('/', { replace: true });
-        }
-      } else if (event === 'TOKEN_REFRESHED') {
-        setUser(session?.user ?? null);
-      }
+    // Never call Supabase auth methods inside its auth callback: they share a lock.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      authEventReceived = true;
+      update(session?.user ?? null);
     });
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!authEventReceived) update(error ? null : data.session?.user ?? null);
+    }).catch(() => { if (!authEventReceived) update(null); });
+    return () => { active = false; subscription.unsubscribe(); };
+  }, [queryClient]);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate, location.pathname, toast]);
+  useEffect(() => {
+    if (!isLoading && user && location.pathname === "/auth") navigate("/", { replace: true });
+  }, [isLoading, user, location.pathname, navigate]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-muted-foreground" dir="rtl">
-        טוען...
-      </div>
-    );
-  }
-
-  return (
-    <AuthContext.Provider value={{ user }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  if (isLoading) return <div className="flex items-center justify-center min-h-screen text-muted-foreground" dir="rtl" role="status">טוען...</div>;
+  return <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>;
 };
