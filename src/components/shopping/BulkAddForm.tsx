@@ -43,7 +43,7 @@ export const BulkAddForm = ({ onAdd, categories, items }: BulkAddFormProps) => {
     if (!bulkItems.trim() || isProcessing) return;
     setIsProcessing(true);
     
-    const { entries, duplicates, invalid } = parseBulkItems(bulkItems, items);
+    const { entries, duplicates, invalid, invalidLines } = parseBulkItems(bulkItems, items);
     
     let addedCount = 0;
     const skipCount = duplicates;
@@ -59,7 +59,7 @@ export const BulkAddForm = ({ onAdd, categories, items }: BulkAddFormProps) => {
       else failed.push(`${name} ${quantity}`);
     }
 
-    setBulkItems(failed.join("\n"));
+    setBulkItems([...failed, ...invalidLines].join("\n"));
     setIsProcessing(false);
     
     if (addedCount > 0) {

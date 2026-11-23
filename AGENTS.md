@@ -7,3 +7,5 @@
 - Keep item normalization, duplicate detection and quantity validation in shared pure utilities with regression tests; all item entry paths must enforce the same rules.
 - Derive the shopping selection from the parent list ID and ignore stale fetch responses; opening or finishing a list must never implicitly create or select another list.
 - Keep auth callbacks synchronous and clear query caches on identity changes; nested auth calls can deadlock and stale caches can expose another account.
+- Layer dialogs above immersive shopping and their menus above dialogs; portal controls must remain visible and touch-accessible.
+- Wrap authentication persistence with a safe storage adapter; blocked browser storage must not crash the application.

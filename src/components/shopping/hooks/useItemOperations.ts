@@ -5,7 +5,7 @@ import { ShoppingItem } from "../types";
 import { useAuth } from "@/components/AuthProvider";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { useRef } from "react";
-import { hasDuplicateItem, isValidQuantity, normalizeItemName } from "@/utils/shoppingValidation";
+import { hasDuplicateItem, isValidQuantity, mergeAddedItem, normalizeItemName } from "@/utils/shoppingValidation";
 
 export const useItemOperations = (
   setItems: React.Dispatch<React.SetStateAction<ShoppingItem[]>>,
@@ -58,7 +58,7 @@ export const useItemOperations = (
       if (error) throw error;
 
       const itemWithNewFlag = { ...data, isNew: true };
-      setItems((prev) => [...prev, itemWithNewFlag]);
+      setItems((prev) => mergeAddedItem(prev, itemWithNewFlag));
 
       void logActivity('item_added', { 
         item_id: data.id,

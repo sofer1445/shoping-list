@@ -9,7 +9,8 @@
 
 # Bug and edge-case audit
 
-- [ ] Fix authentication lifecycle, stale list requests and isolated offline backups.
-- [ ] Fix duplicate bulk input, save feedback and rapid repeated actions.
-- [ ] Verify mobile screenshots, empty/error states and focus navigation; run regression tests.
-- [ ] Save fixes and report authentication-dependent checks that remain blocked.
+- [x] Fix authentication lifecycle, stale list requests and isolated offline backups.
+- [x] Fix duplicate bulk input, save feedback and rapid repeated actions.
+- [x] Verify live public authentication at 320/360/1280px; verify focus, editing, RTL gestures, last-item, empty and failed-save states using isolated test data; nine regression tests passed.
+- [x] Save fixes and report authentication-dependent checks that remain blocked.
+- [ ] Verify real signed-in CRUD, household realtime and concurrent duplicate additions: external unmanaged authentication provides no test session; these checks and hosted signup settings remain unverified.

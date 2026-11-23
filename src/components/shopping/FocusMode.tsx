@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronRight, Hand, PartyPopper, SkipForward, Pencil } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Check, ChevronRight, PartyPopper, SkipForward, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,8 +17,6 @@ interface Props {
   finishDisabled?: boolean;
 }
 
-const HINT_KEY = "focus-mode-hint-seen";
-
 export const FocusMode = ({
   items,
   total,
@@ -34,28 +32,8 @@ export const FocusMode = ({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dx, setDx] = useState(0);
   const [marking, setMarking] = useState(false);
-  const [showHint, setShowHint] = useState(false);
   const start = useRef<{ x: number; y: number } | null>(null);
   const displacement = useRef(0);
-
-  useEffect(() => {
-    let seen = true;
-    try {
-      seen = !!localStorage.getItem(HINT_KEY);
-    } catch {
-      seen = false;
-    }
-    if (!seen) {
-      setShowHint(true);
-      try {
-        localStorage.setItem(HINT_KEY, "1");
-      } catch {
-        /* storage unavailable — hint may show again */
-      }
-      const t = setTimeout(() => setShowHint(false), 4000);
-      return () => clearTimeout(t);
-    }
-  }, []);
 
   const item = queue.find((value) => value.id === activeId) ?? queue[0];
   const index = item ? queue.findIndex((value) => value.id === item.id) : 0;
@@ -105,41 +83,6 @@ export const FocusMode = ({
     resetGesture();
     // RTL: right is next, left is previous. Cancellation never navigates.
     if (Math.abs(moved) > 70) go(moved > 0 ? 1 : -1);
-  };
-
-  if (queue.length === 0) return;
-    setIndex((i) => (i + dir + queue.length) % queue.length);
-    setDx(0);
-  };
-
-  const markDone = () => {
-    if (!item || marking) return;
-    setMarking(true);
-    onToggle(item.id);
-    setTimeout(() => {
-      setMarking(false);
-      setDx(0);
-      setIndex((i) => (i >= queue.length - 1 ? 0 : i));
-    }, 320);
-  };
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    startX.current = e.clientX;
-  };
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (start.current === null) return;
-    setDx(e.clientX - startX.current);
-  };
-  const onPointerUp = () => {
-    if (start.current === null) return;
-    const moved = dx;
-    startX.current = null;
-    if (Math.abs(moved) > 70) {
-      // RTL: swipe right → next item, swipe left → previous
-      go(moved > 0 ? 1 : -1);
-    } else {
-      setDx(0);
-    }
   };
 
   if (queue.length === 0 || !item) {
@@ -250,14 +193,6 @@ export const FocusMode = ({
         </div>
       </div>
 
-      {showHint && (
-        <div className="absolute inset-x-0 bottom-36 z-40 flex justify-center px-6 pointer-events-none">
-          <div className="flex items-center gap-2 rounded-full bg-foreground/90 text-background text-[12px] px-4 py-2 shadow-lg animate-in fade-in slide-in-from-bottom-2">
-            <Hand className="h-4 w-4" />
-            החלק ימינה ושמאלה כדי לעבור בין הפריטים
-          </div>
-        </div>
-      )}
     </div>
   );
 };
