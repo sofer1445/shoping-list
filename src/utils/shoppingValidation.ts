@@ -13,6 +13,25 @@ export const hasDuplicateItem = (
   items: { id?: string; name: string }[], name: string, excludingId?: string
 ) => items.some((item) => (!excludingId || item.id !== excludingId) && normalizeItemName(item.name) === normalizeItemName(name));
 
+// Copy actions create new rows, never rewrite the archived source records.
+export const prepareUniqueItems = <T extends { name: string; quantity: number }>(items: T[]) => {
+  const seen = new Set<string>();
+  const entries: T[] = [];
+  let duplicates = 0;
+  let invalid = 0;
+  for (const item of items) {
+    const name = normalizeItemName(item.name);
+    if (!name || !isValidQuantity(item.quantity)) { invalid++; continue; }
+    if (seen.has(name)) { duplicates++; continue; }
+    seen.add(name);
+    entries.push({ ...item, name: item.name.trim().replace(/\s+/g, " ") });
+  }
+  return { entries, duplicates, invalid };
+};
+
+export const isDuplicateItemError = (error: unknown) =>
+  typeof error === "object" && error !== null && "code" in error && error.code === "23505";
+
 export const parseBulkItems = (text: string, existing: { name: string }[]) => {
   const seen = new Set(existing.map((item) => normalizeItemName(item.name)));
   const entries: { name: string; quantity: number }[] = [];

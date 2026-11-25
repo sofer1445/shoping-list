@@ -14,3 +14,10 @@
 - [x] Verify live public authentication at 320/360/1280px; verify focus, editing, RTL gestures, last-item, empty and failed-save states using isolated test data; nine regression tests passed.
 - [x] Save fixes and report authentication-dependent checks that remain blocked.
 - [ ] Verify real signed-in CRUD, household realtime and concurrent duplicate additions: external unmanaged authentication provides no test session; these checks and hosted signup settings remain unverified.
+
+# Follow-up flow sweep
+
+- [ ] Confirm the reported focus compile crash is absent in the current preview.
+- [ ] Audit every item-entry path, copy/restore flow, recommendations and analytics/database functions against duplicate prevention and recoverable errors.
+- [ ] Extend shared protection to future copy and restore actions without changing historical records, permissions or settings.
+- [ ] Run regression/browser checks and document remaining signed-in verification limits.
