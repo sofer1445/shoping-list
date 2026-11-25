@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingItem } from "./types";
+import { createListCopy } from "./copyList";
 import { useActivityLog } from "@/hooks/useActivityLog";
 
 interface ExportToNewListButtonProps {
@@ -41,33 +42,8 @@ export const ExportToNewListButton = ({ listId, items, onExport, compact }: Expo
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Create new list
-      const { data: newList, error: createError } = await supabase
-        .from("shopping_lists")
-        .insert({
-          name: "רשימת קניות",
-          created_by: user.id,
-        })
-        .select()
-        .single();
-
-      if (createError) throw createError;
-
-      // Copy active items to new list
-      const itemsToInsert = activeItems.map(item => ({
-        list_id: newList.id,
-        name: item.name,
-        quantity: item.quantity,
-        category: item.category,
-        completed: false,
-        created_by: user.id,
-      }));
-
-      const { error: insertError } = await supabase
-        .from("shopping_items")
-        .insert(itemsToInsert);
-
-      if (insertError) throw insertError;
+      const result = await createListCopy("רשימת קניות", activeItems, user.id);
+      const newList = result.list;
 
       // Archive the old list
       const { error: archiveError } = await supabase
@@ -78,15 +54,20 @@ export const ExportToNewListButton = ({ listId, items, onExport, compact }: Expo
         })
         .eq("id", listId).select("id").single();
 
-      if (archiveError) throw archiveError;
+      if (archiveError) {
+        toast({ title: "הפריטים הועתקו", description: "הרשימה החדשה נשמרה, אך הישנה לא הועברה להיסטוריה. אפשר לנסות להעביר אותה שוב מהמסך של הרשימות.", variant: "destructive" });
+        onExport(newList.id);
+        return;
+      }
 
       void logActivity('list_created', { list_id: newList.id, exported_from: listId });
 
       toast({
         title: "רשימה חדשה נוצרה",
-        description: `${activeItems.length} פריטים פעילים הועברו לרשימה חדשה`,
+        description: `${result.added} פריטים פעילים הועברו לרשימה חדשה`,
       });
 
+      if (result.duplicates || result.invalid) toast({ title: "פריטים שלא הועתקו", description: `דלגנו על ${result.duplicates} כפילויות ו־${result.invalid} פריטים לא תקינים` });
       onExport(newList.id);
     } catch (error) {
       console.error("Error exporting to new list:", error);

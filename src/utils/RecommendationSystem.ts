@@ -37,10 +37,25 @@ export class RecommendationSystem {
   private loadUserRecommendations(): UserPurchaseData {
     try {
       const stored = localStorage.getItem(RecommendationSystem.STORAGE_KEY);
-      return stored ? JSON.parse(stored) : {};
+      const parsed: unknown = stored ? JSON.parse(stored) : {};
+      const result: UserPurchaseData = Object.create(null);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return result;
+      for (const [item, recommendations] of Object.entries(parsed)) {
+        if (!recommendations || typeof recommendations !== "object" || Array.isArray(recommendations)) continue;
+        const safeRecommendations: UserPurchaseData[string] = Object.create(null);
+        for (const [name, data] of Object.entries(recommendations)) {
+          if (data && typeof data === "object" && "count" in data && "lastPurchased" in data &&
+              typeof data.count === "number" && Number.isFinite(data.count) && data.count >= 0 &&
+              typeof data.lastPurchased === "number" && Number.isFinite(data.lastPurchased)) {
+            safeRecommendations[name] = { count: data.count, lastPurchased: data.lastPurchased };
+          }
+        }
+        result[item] = safeRecommendations;
+      }
+      return result;
     } catch (error) {
       console.error('Error loading recommendations:', error);
-      return {};
+      return Object.create(null);
     }
   }
 
@@ -66,7 +81,7 @@ export class RecommendationSystem {
 
     items.forEach((item, i) => {
       if (!this.userRecommendations[item]) {
-        this.userRecommendations[item] = {};
+        this.userRecommendations[item] = Object.create(null);
       }
 
       items.slice(i + 1).forEach(otherItem => {
@@ -90,7 +105,8 @@ export class RecommendationSystem {
     const recommendations = new Map<string, number>();
     
     // Add static recommendations with base score
-    const staticRecs = RecommendationSystem.staticRecommendations[item] || [];
+    const staticRecs = Object.prototype.hasOwnProperty.call(RecommendationSystem.staticRecommendations, item)
+      ? RecommendationSystem.staticRecommendations[item] : [];
     staticRecs.forEach(rec => recommendations.set(rec, 1));
 
     // Add user recommendations with calculated scores

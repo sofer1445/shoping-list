@@ -5,7 +5,7 @@ import { ShoppingItem } from "../types";
 import { useAuth } from "@/components/AuthProvider";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { useRef } from "react";
-import { hasDuplicateItem, isValidQuantity, mergeAddedItem, normalizeItemName } from "@/utils/shoppingValidation";
+import { hasDuplicateItem, isDuplicateItemError, isValidQuantity, mergeAddedItem, normalizeItemName } from "@/utils/shoppingValidation";
 
 export const useItemOperations = (
   setItems: React.Dispatch<React.SetStateAction<ShoppingItem[]>>,
@@ -81,6 +81,10 @@ export const useItemOperations = (
       window.dispatchEvent(new CustomEvent("shopping-list-updated"));
       return true;
     } catch (error) {
+      if (isDuplicateItemError(error)) {
+        toast({ title: "פריט כבר קיים", description: `״${newItem.name.trim()}״ כבר נוסף לרשימה`, variant: "destructive" });
+        return false;
+      }
       console.error("Error adding item:", error);
       toast({
         title: "שגיאה",

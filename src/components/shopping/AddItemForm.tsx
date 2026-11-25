@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { hasDuplicateItem, isValidQuantity } from "@/utils/shoppingValidation";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Select,
   SelectContent,
@@ -29,15 +30,16 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [recommendationSystem] = useState(() => new RecommendationSystem());
   const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
   const duplicate = hasDuplicateItem(items, newItemName);
 
   useEffect(() => {
     if (newItemName) {
-      setRecommendations(recommendationSystem.getRecommendations(newItemName));
+      setRecommendations(recommendationSystem.getRecommendations(newItemName).filter((name) => !hasDuplicateItem(items, name)));
     } else {
       setRecommendations([]);
     }
-  }, [newItemName]);
+  }, [newItemName, items]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,12 +47,12 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
     if (!normalizedName || !isValidQuantity(newItemQuantity) || duplicate || saving) return;
 
     setSaving(true);
+    try {
     const saved = await onAdd({
       name: newItemName.trim(),
       quantity: newItemQuantity,
       category: selectedCategory,
     });
-    setSaving(false);
     if (!saved) return;
 
     recommendationSystem.addPurchaseData([newItemName]);
@@ -58,18 +60,24 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
     setNewItemName("");
     setNewItemQuantity(1);
     setRecommendations([]);
+    } catch {
+      toast({ title: "הפריט לא נוסף", description: "נסה שוב. הפרטים שהזנת נשמרו בטופס", variant: "destructive" });
+    } finally { setSaving(false); }
   };
 
   const handleRecommendationSelect = async (item: string) => {
-    if (saving) return;
+    if (saving || hasDuplicateItem(items, item)) return;
     setSaving(true);
+    try {
     const saved = await onAdd({
       name: item,
       quantity: 1,
       category: categories[0],
     });
-    setSaving(false);
     if (saved) recommendationSystem.addPurchaseData([newItemName, item]);
+    } catch {
+      toast({ title: "הפריט לא נוסף", description: "נסה שוב", variant: "destructive" });
+    } finally { setSaving(false); }
   };
 
   const handleRecommendationDismiss = (item: string) => {
@@ -96,6 +104,7 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
               <Input
                 type="number"
                 aria-label="כמות"
+                disabled={saving}
                 value={newItemQuantity}
                 onChange={(e) => setNewItemQuantity(Number(e.target.value))}
                 min="1"
@@ -105,6 +114,7 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
               <Input
                 type="text"
                 aria-label="שם הפריט"
+                disabled={saving}
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 placeholder="מה להוסיף?"
@@ -112,7 +122,7 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
               />
             </div>
 
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={saving}>
               <SelectTrigger className="h-12 rounded-xl text-[15px] bg-background">
                 <SelectValue placeholder="בחר קטגוריה" />
               </SelectTrigger>
@@ -141,6 +151,7 @@ export const AddItemForm = ({ onAdd, categories, items }: AddItemFormProps) => {
           </form>
 
           <Recommendations
+            disabled={saving}
             recommendations={recommendations}
             onSelect={handleRecommendationSelect}
             onDismiss={handleRecommendationDismiss}

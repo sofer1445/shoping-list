@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { ShoppingItem } from "../types";
 import { useActivityLog } from "@/hooks/useActivityLog";
-import { hasDuplicateItem, isValidQuantity, normalizeItemName } from "@/utils/shoppingValidation";
+import { hasDuplicateItem, isDuplicateItemError, isValidQuantity, normalizeItemName } from "@/utils/shoppingValidation";
 
 export const useItemModification = (
   items: ShoppingItem[],
@@ -90,6 +90,10 @@ export const useItemModification = (
       window.dispatchEvent(new CustomEvent("shopping-list-updated"));
       return true;
     } catch (error) {
+      if (isDuplicateItemError(error)) {
+        toast({ title: "פריט כבר קיים", description: `״${updatedItem.name.trim()}״ כבר נמצא ברשימה`, variant: "destructive" });
+        return false;
+      }
       console.error("Error updating item:", error);
       toast({
         title: "שגיאה",

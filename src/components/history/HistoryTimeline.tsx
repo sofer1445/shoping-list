@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
 import { ShoppingItem } from "@/components/shopping/types";
+import { createListCopy } from "@/components/shopping/copyList";
 
 interface ArchivedList {
   id: string;
@@ -107,32 +108,11 @@ export const HistoryTimeline = ({ onOpenList }: Props) => {
     if (!user || busy) return;
     setBusy(list.id);
     try {
-      const { data: newList, error } = await supabase
-        .from("shopping_lists")
-        .insert({ name: `${list.name} (שוב)`, created_by: user.id })
-        .select()
-        .single();
-      if (error) throw error;
-
-      if (list.items.length > 0) {
-        const { error: itemsError } = await supabase.from("shopping_items").insert(
-          list.items.map((it) => ({
-            list_id: newList.id,
-            name: it.name,
-            quantity: it.quantity,
-            category: it.category,
-            completed: false,
-            created_by: user.id,
-          }))
-        );
-        if (itemsError) {
-          await supabase.from("shopping_lists").delete().eq("id", newList.id);
-          throw itemsError;
-        }
-      }
-      toast({ title: "רשימה חדשה נוצרה", description: `${list.items.length} פריטים` });
+      const result = await createListCopy(`${list.name} (שוב)`, list.items, user.id);
+      toast({ title: "רשימה חדשה נוצרה", description: `${result.added} פריטים` });
+      if (result.duplicates || result.invalid) toast({ title: "פריטים שלא הועתקו", description: `דלגנו על ${result.duplicates} כפילויות ו־${result.invalid} פריטים לא תקינים` });
       window.dispatchEvent(new CustomEvent("shopping-list-updated"));
-      onOpenList(newList.id);
+      onOpenList(result.list.id);
     } catch (e: any) {
       toast({ title: "שגיאה", description: e.message, variant: "destructive" });
     } finally {

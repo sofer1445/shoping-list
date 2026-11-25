@@ -57,10 +57,11 @@ export const SmartSearch = ({
 
   // Load recent searches from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('recent_searches_hebrew');
-    if (saved) {
-      setRecentSearches(JSON.parse(saved));
-    }
+    try {
+      const saved = localStorage.getItem('recent_searches_hebrew');
+      const parsed: unknown = saved ? JSON.parse(saved) : [];
+      if (Array.isArray(parsed)) setRecentSearches(parsed.filter((value): value is string => typeof value === "string").slice(0, 5));
+    } catch { /* search works without a saved history */ }
   }, []);
 
   const handleSearch = (value: string) => {
@@ -68,7 +69,7 @@ export const SmartSearch = ({
     if (value && !recentSearches.includes(value)) {
       const updated = [value, ...recentSearches.slice(0, 4)];
       setRecentSearches(updated);
-      localStorage.setItem('recent_searches_hebrew', JSON.stringify(updated));
+      try { localStorage.setItem('recent_searches_hebrew', JSON.stringify(updated)); } catch { /* search remains usable */ }
     }
   };
 

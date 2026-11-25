@@ -50,17 +50,21 @@ export const BulkAddForm = ({ onAdd, categories, items }: BulkAddFormProps) => {
     const failed: string[] = [];
 
     for (const { name, quantity } of entries) {
-      const saved = await onAdd({
+      let saved = false;
+      try {
+      saved = await onAdd({
         name,
         quantity,
         category: getCategory(name),
       });
+      } catch { /* keep this line available for retry */ }
       if (saved) addedCount++;
       else failed.push(`${name} ${quantity}`);
     }
 
     setBulkItems([...failed, ...invalidLines].join("\n"));
     setIsProcessing(false);
+    if (failed.length) toast({ title: "חלק מהפריטים לא נוספו", description: `${failed.length} פריטים נשארו בטופס כדי לנסות שוב`, variant: "destructive" });
     
     if (addedCount > 0) {
       toast({

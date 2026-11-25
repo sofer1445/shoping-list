@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { ListCard } from "./ListCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { createListCopy } from "@/components/shopping/copyList";
 
 interface Props {
   onOpenList: (id: string) => void;
@@ -99,13 +100,6 @@ export const ListsHome = ({ onOpenList }: Props) => {
     if (!user || busy) return;
     setBusy(true);
     try {
-      const { data: newList, error: createError } = await supabase
-        .from("shopping_lists")
-        .insert({ name: `${list.name} (עותק)`, created_by: user.id })
-        .select()
-        .single();
-      if (createError) throw createError;
-
       const { data: items, error: itemsError } = await supabase
         .from("shopping_items")
         .select("name, quantity, category")
@@ -113,20 +107,9 @@ export const ListsHome = ({ onOpenList }: Props) => {
         .eq("archived", false);
       if (itemsError) throw itemsError;
 
-      if (items?.length && newList) {
-        const { error: insertError } = await supabase.from("shopping_items").insert(
-          items.map((i) => ({
-            list_id: newList.id,
-            name: i.name,
-            quantity: i.quantity,
-            category: i.category,
-            created_by: user.id,
-          }))
-        );
-        if (insertError) throw insertError;
-      }
-
-      toast({ title: "הרשימה שוכפלה", description: `${list.name} (עותק)` });
+      const result = await createListCopy(`${list.name} (עותק)`, items ?? [], user.id);
+      toast({ title: "הרשימה שוכפלה", description: `${result.added} פריטים נוספו לעותק` });
+      if (result.duplicates || result.invalid) toast({ title: "פריטים שלא הועתקו", description: `דלגנו על ${result.duplicates} כפילויות ו־${result.invalid} פריטים לא תקינים` });
       window.dispatchEvent(new CustomEvent("shopping-list-updated"));
       await refetch();
     } catch (e: any) {

@@ -1,15 +1,16 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Lightbulb, X, Plus, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
+import { useToast } from "../ui/use-toast";
+import { hasDuplicateItem } from "@/utils/shoppingValidation";
 import { ShoppingItem } from "./types";
 import { RecommendationSystem } from "@/utils/RecommendationSystem";
 
 interface SmartRecommendationsProps {
   items: ShoppingItem[];
-  onAddItem: (item: Omit<ShoppingItem, "id" | "completed" | "isNew">) => void;
+  onAddItem: (item: Omit<ShoppingItem, "id" | "completed" | "isNew">) => boolean | Promise<boolean>;
   categories: string[];
 }
 
@@ -22,11 +23,14 @@ export const SmartRecommendations = ({
   const [contextualRecs, setContextualRecs] = useState<string[]>([]);
   const [dismissedRecs, setDismissedRecs] = useState<Set<string>>(new Set());
   const [recommendationSystem] = useState(() => new RecommendationSystem());
+  const { toast } = useToast();
+  const pending = useRef(false);
+  const [adding, setAdding] = useState(false);
   const [isMainExpanded, setIsMainExpanded] = useState(false);
   const [isContextualExpanded, setIsContextualExpanded] = useState(false);
 
   // Enhanced Hebrew product recommendations by category
-  const hebrewRecommendations = {
+  const hebrewRecommendations: Record<string, string[]> = {
     'ירקות ופירות': [
       'עגבניות', 'מלפפונים', 'בצל', 'גזר', 'תפוחים', 'בננות', 
       'פלפל אדום', 'חסה', 'פטרוזיליה', 'לימון', 'תפוז', 'אבוקדו',
@@ -70,7 +74,7 @@ export const SmartRecommendations = ({
     // Combine and filter out existing items and dismissed items
     const allRecs = [...new Set([...traditionalRecs, ...contextRecs])]
       .filter(rec => 
-        !currentItems.includes(rec) && 
+        !hasDuplicateItem(items, rec) && 
         !dismissedRecs.has(rec)
       )
       .slice(0, 8);
@@ -79,7 +83,10 @@ export const SmartRecommendations = ({
     setContextualRecs(allRecs.slice(4, 8));
   }, [items, dismissedRecs, recommendationSystem]);
 
-  const handleAddRecommendation = (itemName: string) => {
+  const handleAddRecommendation = async (itemName: string) => {
+    if (pending.current || hasDuplicateItem(items, itemName)) return;
+    pending.current = true;
+    setAdding(true);
     // Determine category based on Hebrew recommendations
     let category = categories[0]; // default
     for (const [cat, items] of Object.entries(hebrewRecommendations)) {
@@ -89,15 +96,15 @@ export const SmartRecommendations = ({
       }
     }
 
-    onAddItem({
-      name: itemName,
-      quantity: 1,
-      category
-    });
-
-    // Update recommendation system
-    const currentItems = items.map(item => item.name);
-    recommendationSystem.addPurchaseData([...currentItems, itemName]);
+    try {
+      const saved = await onAddItem({ name: itemName, quantity: 1, category });
+      if (saved) recommendationSystem.addPurchaseData([...items.map(item => item.name), itemName]);
+    } catch {
+      toast({ title: "הפריט לא נוסף", description: "נסה שוב", variant: "destructive" });
+    } finally {
+      pending.current = false;
+      setAdding(false);
+    }
   };
 
   const handleDismiss = (itemName: string) => {
@@ -132,7 +139,7 @@ export const SmartRecommendations = ({
               <div className="text-right">
                 <CardTitle className="text-base flex items-center gap-2 justify-end">
                   <span>המלצות חכמות</span>
-                  <Lightbulb className="h-4 w-4 text-yellow-500" />
+                  <Lightbulb className="h-4 w-4 text-warning" />
                 </CardTitle>
                 <CardDescription className="text-sm text-right">
                   מוצרים שלרוב קונים יחד עם הפריטים ברשימה שלך
@@ -146,7 +153,7 @@ export const SmartRecommendations = ({
                 {recommendations.map((item) => (
                   <div
                     key={item}
-                    className="group flex items-center gap-1 px-3 py-2 bg-blue-50 rounded-full text-sm border border-blue-200 hover:bg-blue-100 transition-colors"
+                    className="group flex items-center gap-1 px-3 py-2 bg-primary-soft rounded-full text-sm border border-primary/20 hover:bg-primary/10 transition-colors"
                   >
                     <Button
                       size="sm"
@@ -154,13 +161,14 @@ export const SmartRecommendations = ({
                       onClick={() => handleDismiss(item)}
                       className="h-auto p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X size={12} className="text-blue-500 hover:text-red-500" />
+                      <X size={12} className="text-primary hover:text-destructive" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleAddRecommendation(item)}
-                      className="h-auto p-0 text-blue-700 hover:text-blue-900 font-medium text-sm"
+                      disabled={adding}
+                      className="h-auto p-0 text-primary hover:text-primary/80 font-medium text-sm"
                     >
                       {item}
                     </Button>
@@ -192,7 +200,7 @@ export const SmartRecommendations = ({
               <div className="text-right">
                 <CardTitle className="text-base flex items-center gap-2 justify-end">
                   <span>עוד הצעות מעניינות</span>
-                  <Sparkles className="h-4 w-4 text-purple-500" />
+                  <Sparkles className="h-4 w-4 text-primary" />
                 </CardTitle>
                 <CardDescription className="text-sm text-right">
                   מוצרים פופולריים מהקטגוריות שלך
@@ -204,12 +212,10 @@ export const SmartRecommendations = ({
             <CardContent className="p-0">
               <div className="flex flex-wrap gap-2 justify-end">
                 {contextualRecs.map((item) => (
-                  <Badge
-                    key={item}
-                    variant="secondary"
-                    className="cursor-pointer hover:bg-purple-100 transition-colors group text-sm px-3 py-1.5 font-medium"
-                    onClick={() => handleAddRecommendation(item)}
-                  >
+                  <div key={item} className="flex items-center gap-1 bg-muted rounded-lg px-2">
+                    <Button variant="ghost" disabled={adding} onClick={() => handleAddRecommendation(item)} className="whitespace-normal text-sm">
+                      <Plus size={12} />{item}
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -219,11 +225,9 @@ export const SmartRecommendations = ({
                       }}
                       className="h-auto p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X size={10} className="text-gray-500 hover:text-red-500" />
+                      <X size={10} className="text-muted-foreground hover:text-destructive" />
                     </Button>
-                    <span>{item}</span>
-                    <Plus size={12} className="mr-1" />
-                  </Badge>
+                  </div>
                 ))}
               </div>
             </CardContent>

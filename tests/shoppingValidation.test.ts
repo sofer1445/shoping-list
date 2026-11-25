@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { hasDuplicateItem, isValidQuantity, mergeAddedItem, parseBulkItems } from "../src/utils/shoppingValidation";
+import { hasDuplicateItem, isDuplicateItemError, isValidQuantity, mergeAddedItem, parseBulkItems, prepareUniqueItems } from "../src/utils/shoppingValidation";
 import { getFromLocalStorage, saveToLocalStorage } from "../src/utils/localStorageUtils";
 import { createSafeAuthStorage } from "../src/utils/safeAuthStorage";
 
@@ -19,6 +19,23 @@ describe("shopping edge cases", () => {
   });
   test("editing the same item is not a duplicate", () => {
     expect(hasDuplicateItem([{ id: "1", name: "חלב" }], "חלב", "1")).toBe(false);
+  });
+  test("list copies skip duplicate names without mutating archived source rows", () => {
+    const source = [{ name: " חלב ", quantity: 1 }, { name: "חלב", quantity: 2 }];
+    const original = JSON.stringify(source);
+    const result = prepareUniqueItems(source);
+    expect(result.entries).toEqual([{ name: "חלב", quantity: 1 }]);
+    expect(result.duplicates).toBe(1);
+    expect(JSON.stringify(source)).toBe(original);
+  });
+  test("copy actions do not insert invalid quantities", () => {
+    const result = prepareUniqueItems([{ name: "לחם", quantity: 0 }, { name: "אורז", quantity: 2 }]);
+    expect(result.entries).toEqual([{ name: "אורז", quantity: 2 }]);
+    expect(result.invalid).toBe(1);
+  });
+  test("database duplicate errors are distinguished from connection failures", () => {
+    expect(isDuplicateItemError({ code: "23505" })).toBe(true);
+    expect(isDuplicateItemError({ code: "PGRST116" })).toBe(false);
   });
   test("realtime arriving before add response does not duplicate the same item", () => {
     expect(mergeAddedItem([{ id: "1", name: "חלב" }], { id: "1", name: "חלב" })).toEqual([{ id: "1", name: "חלב" }]);

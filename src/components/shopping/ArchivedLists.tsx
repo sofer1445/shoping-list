@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArchiveRestore, MoveRight } from "lucide-react";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/use-toast";
@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
+import { hasDuplicateItem, isDuplicateItemError, isValidQuantity, normalizeItemName } from "@/utils/shoppingValidation";
 import { ShoppingItem } from "./types";
 import {
   Accordion,
@@ -26,6 +27,8 @@ export const ArchivedLists = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
+  const pending = useRef(new Set<string>());
+  const [moving, setMoving] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -123,6 +126,13 @@ export const ArchivedLists = () => {
   };
 
   const handleRestoreItem = async (item: ShoppingItem) => {
+    const name = normalizeItemName(item.name);
+    if (!user || pending.current.has(name)) return false;
+    if (!name || !isValidQuantity(item.quantity)) {
+      toast({ title: "פריט לא תקין", description: "יש להזין שם וכמות שלמה של 1 לפחות", variant: "destructive" });
+      return false;
+    }
+    pending.current.add(name);
     try {
       const { data: currentList, error: listError } = await supabase
         .from("shopping_lists")
@@ -144,6 +154,13 @@ export const ArchivedLists = () => {
         return;
       }
 
+      const { data: existing, error: checkError } = await supabase.from("shopping_items")
+        .select("id, name").eq("list_id", currentList.id).eq("archived", false);
+      if (checkError) throw checkError;
+      if (hasDuplicateItem(existing ?? [], item.name)) {
+        toast({ title: "פריט כבר קיים", description: `״${item.name}״ כבר נמצא ברשימה`, variant: "destructive" });
+        return false;
+      }
       const { error: createError } = await supabase
         .from("shopping_items")
         .insert({
@@ -163,14 +180,20 @@ export const ArchivedLists = () => {
 
       window.dispatchEvent(new CustomEvent('shopping-list-updated'));
       setSelectedItems(prev => ({ ...prev, [item.id]: false }));
+      return true;
     } catch (error) {
+      if (isDuplicateItemError(error)) {
+        toast({ title: "פריט כבר קיים", description: `״${item.name}״ כבר נמצא ברשימה`, variant: "destructive" });
+        return false;
+      }
       console.error("Error restoring item:", error);
       toast({
         title: "שגיאה",
         description: "לא ניתן היה לשחזר את הפריט",
         variant: "destructive",
       });
-    }
+      return false;
+    } finally { pending.current.delete(name); }
   };
 
   const handleMoveSelectedItems = async (listId: string) => {
@@ -178,12 +201,11 @@ export const ArchivedLists = () => {
       .find(list => list.id === listId)
       ?.items?.filter(item => selectedItems[item.id]) || [];
 
-    for (const item of itemsToMove) {
-      await handleRestoreItem(item);
-    }
-
-    // Clear selection after moving
-    setSelectedItems({});
+    if (moving) return;
+    setMoving(true);
+    try {
+      for (const item of itemsToMove) await handleRestoreItem(item);
+    } finally { setMoving(false); }
   };
 
   if (isLoading) {
@@ -246,6 +268,7 @@ export const ArchivedLists = () => {
                       handleMoveSelectedItems(list.id);
                     }}
                     className="gap-2"
+                    disabled={moving}
                   >
                     <MoveRight size={16} />
                     העבר לרשימה נוכחית
@@ -257,7 +280,7 @@ export const ArchivedLists = () => {
                   <div>
                     <div className="font-medium">{list.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      {format(new Date(list.archived_at), "dd/MM/yyyy HH:mm")}
+                      {Number.isNaN(new Date(list.archived_at).getTime()) ? "ללא תאריך" : format(new Date(list.archived_at), "dd/MM/yyyy HH:mm")}
                     </div>
                   </div>
                 </AccordionTrigger>
@@ -286,6 +309,7 @@ export const ArchivedLists = () => {
                       <Button
                         variant="ghost"
                         size="sm"
+                        disabled={moving}
                         onClick={() => handleRestoreItem(item)}
                         className="gap-2"
                       >
